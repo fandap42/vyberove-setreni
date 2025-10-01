@@ -1,0 +1,12 @@
+---
+title: "Ukol 1"
+output: html_document
+date: "2025-20-01"
+editor_options: 
+  chunk_output_type: consolea
+---
+
+# Pravděpodobnostní rozdělení výběrového průměru
+
+## 1.
+
