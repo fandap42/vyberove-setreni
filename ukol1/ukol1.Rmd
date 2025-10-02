@@ -2,11 +2,234 @@
 title: "Ukol 1"
 output: html_document
 date: "2025-20-01"
-editor_options: 
-  chunk_output_type: consolea
 ---
 
 # Pravděpodobnostní rozdělení výběrového průměru
 
 ## 1.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=TRUE, message=FALSE, warning=FALSE)
+library(readxl)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+``` 
+
+## Načtení dat a příprava populace
+
+```{r data-prep}
+# Pokusíme se načíst Vysky.xlsx ze stejné složky jako Rmd
+xlsx_path <- file.path("..","Vysky.xlsx")
+if (file.exists(xlsx_path)) {
+  vysky_df <- readxl::read_excel(xlsx_path)
+  # předpoklad: soubor obsahuje sloupec s výškami (první číselný sloupec)
+  vysky <- as.numeric(vysky_df[[1]])
+} else {
+  # Fallback: pokud soubor chybí, užijeme demonstrativní populaci 18 hodnot.
+  # Upravte tento vektor podle skutečných údajů z Vysky.xlsx pokud je potřeba.
+  vysky <- c(172, 168, 175, 180, 165, 170, 177, 169, 182, 158, 174, 176, 171, 167, 173, 179, 160, 166)
+}
+
+# Přidejte svou výšku jako 19. pozorování
+my_height <- 178  # <- zde změňte na svoji výšku v cm
+pop <- c(vysky, my_height)
+N <- length(pop)
+pop
+N
+pop_mean <- mean(pop)
+pop_var_pop <- var(pop)*(N-1)/N  # populační rozptyl
+pop_mean
+pop_var_pop
+```
+
+## 1) Pravděpodobnostní rozdělení výběrového průměru (n = 3,4,5)
+
+```{r sampling-means-functions}
+# Funkce: všechny kombinace bez vraceni a vypocet vyberovych prumeru
+sample_means_all <- function(population, n) {
+  comb_means <- combn(population, n, FUN = mean)
+  return(as.numeric(comb_means))
+}
+
+# Funkce pro vypocet pravdepodobnostni (pmf) a distribuční (ecdf) funkce
+pmf_from_values <- function(values) {
+  tbl <- table(values)
+  probs <- as.numeric(tbl)/sum(tbl)
+  names(probs) <- names(tbl)
+  return(probs)
+}
+
+ecdf_values <- function(values) {
+  return(ecdf(values))
+}
+
+# Pro ulozeni vysledku pro ruzna n
+ns <- c(3,4,5)
+means_list <- lapply(ns, function(n) sample_means_all(pop, n))
+names(means_list) <- paste0("n", ns)
+
+# PMF a ECDF priprava
+pmf_list <- lapply(means_list, pmf_from_values)
+ecdf_list <- lapply(means_list, ecdf_values)
+
+# Stredni hodnota, rozptyl, bias pro kazde n
+stats_means <- lapply(means_list, function(v) {
+  m <- mean(v)
+  vvar <- var(v) * (length(v)-1)/length(v) # population-like correction for distribution of all combinations
+  bias <- m - pop_mean
+  list(mean = m, var = vvar, bias = bias)
+})
+names(stats_means) <- paste0("n", ns)
+stats_means
+```
+
+### i) Pravděpodobnostní a distribuční funkce (ukázka pro n=3)
+
+```{r pmf-plot-n3, fig.width=6, fig.height=4}
+# PMF jako svisle cary (type = "h") a hustota (histogram) pro n=3
+n <- 3
+vals <- means_list[[which(ns==n)]]
+plot(ecdf(vals), main = paste("ECDF výběrového průměru (n=", n, ")", sep=""), xlab = "Průměr (cm)")
+
+# PMF
+tbl <- prop.table(table(round(vals,2)))
+plot(as.numeric(names(tbl)), as.numeric(tbl), type = "h", lwd=4, xlab = "Průměr (cm)", ylab = "P", main = paste("PMF výběrového průměru (n=", n, ")", sep=""))
+```
+
+### ii) Střední hodnota a rozptyl výběrového průměru; bias
+
+```{r mean-var-bias}
+stats_means
+
+# Zhodnoceni nestrannosti: bias blízko 0 -> nestranný
+bias_table <- sapply(stats_means, function(x) x$bias)
+bias_table
+```
+
+### iii) Variabilita odhadů (CV, decily, kvartily, IQR)
+
+```{r variability}
+variability_summary <- lapply(means_list, function(v) {
+  mu <- mean(v)
+  sdv <- sd(v)
+  cv <- sdv/mu
+  dec1 <- quantile(v, probs = 0.1, type = 4)
+  dec9 <- quantile(v, probs = 0.9, type = 4)
+  q1 <- quantile(v, probs = 0.25, type = 4)
+  q3 <- quantile(v, probs = 0.75, type = 4)
+  iqr <- q3 - q1
+  list(cv = cv, dec1 = dec1, dec9 = dec9, q1 = q1, q3 = q3, iqr = iqr)
+})
+names(variability_summary) <- paste0("n", ns)
+variability_summary
+```
+
+### iv) Grafické porovnání rozdělení pro různé n
+
+```{r compare-means-plot, fig.width=8, fig.height=5}
+# Spojime data do long form pro ggplot
+df_means <- bind_rows(lapply(seq_along(means_list), function(i) {
+  data.frame(n = ns[i], mean = means_list[[i]])
+}), .id = NULL)
+df_means$n <- factor(df_means$n)
+
+ggplot(df_means, aes(x = mean, colour = n, fill = n)) +
+  geom_density(alpha = 0.2) +
+  labs(title = "Hustota výběrového průměru pro různé n", x = "Výběrový průměr (cm)", y = "Hustota") +
+  theme_minimal()
+```
+
+## 2) Pravděpodobnostní rozdělení relativní četnosti a počtu studentů vyšších než já
+
+```{r relative-frequency-setup}
+# Vytvorime 0/1 vektor: 1 pokud student je vyssi nez my_height
+indicator <- ifelse(pop > my_height, 1, 0)
+M <- sum(indicator)  # pocet uspechu v populaci
+pi_pop <- mean(indicator) # populační relativní četnost
+N; M; pi_pop
+
+# Funkce pro relativni cetnost: vsechny kombinace a vypocet podilu
+sample_prop_all <- function(population_indicator, n) {
+  # vybereme indexy kombinaci (rychle pres combn nad 0/1 vektorem)
+  comb_props <- combn(population_indicator, n, FUN = function(x) mean(as.numeric(x)))
+  as.numeric(comb_props)
+}
+
+# Ulozime pro n=3,4,5
+props_list <- lapply(ns, function(n) sample_prop_all(indicator, n))
+names(props_list) <- paste0("n", ns)
+
+# PMF pro relativni cetnost lze spoctout pomoci hypergeometricke hustoty pro diskretni mozne hodnoty
+hyper_pmf_for_n <- function(N, M, n) {
+  k <- 0:min(n, M)
+  probs <- dhyper(k, M, N - M, n)
+  data.frame(k = k, prop = k / n, prob = probs)
+}
+
+hyper_pmf_list <- lapply(ns, function(n) hyper_pmf_for_n(N, M, n))
+names(hyper_pmf_list) <- paste0("n", ns)
+
+```
+
+### i) Pravděpodobnostní a distribuční funkce relativní četnosti (příklad n=4)
+
+```{r pmf-prop-n4, fig.width=6, fig.height=4}
+n <- 4
+dfp <- hyper_pmf_list[[which(ns==n)]]
+plot(dfp$prop, dfp$prob, type = "h", lwd = 4, xlab = "Relativní četnost p", ylab = "P(p)", main = paste("PMF relativní četnosti (n=", n, ")", sep=""))
+plot(dfp$prop, cumsum(dfp$prob), type = "s", xlab = "Relativní četnost p", ylab = "F(p)", main = paste("ECDF relativní četnosti (n=", n, ")", sep=""))
+```
+
+### ii) Střední hodnota, rozptyl a bias pro relativní četnost
+
+```{r stats-prop}
+# Pro empiricke vsechny kombinace
+stats_props <- lapply(props_list, function(v) {
+  m <- mean(v)
+  vvar <- var(v) * (length(v)-1)/length(v)
+  bias <- m - pi_pop
+  list(mean = m, var = vvar, bias = bias)
+})
+names(stats_props) <- paste0("n", ns)
+stats_props
+
+# Komentar k nestrannosti: bias blizko 0 => nestranne
+```
+
+### iii) Grafické porovnání rozdělení relativní četnosti
+
+```{r compare-prop-plot, fig.width=8, fig.height=5}
+df_props <- bind_rows(lapply(seq_along(props_list), function(i) {
+  data.frame(n = ns[i], prop = props_list[[i]])
+}))
+df_props$n <- factor(df_props$n)
+
+ggplot(df_props, aes(x = prop, colour = n, fill = n)) +
+  geom_density(alpha = 0.2) +
+  labs(title = "Hustota odhadu relativní četnosti pro různé n", x = "Relativní četnost", y = "Hustota") +
+  theme_minimal()
+```
+
+### iv) Pravděpodobnostní rozdělení počtu studentů vyšších než já (hypergeometrické rozdělení)
+
+```{r count-distribution}
+# Pocet vysledku k ma rozdeleni hypergeom: P(K=k) = dhyper(k, M, N-M, n)
+counts_list <- lapply(ns, function(n) {
+  k <- 0:min(n, M)
+  data.frame(k = k, prob = dhyper(k, M, N - M, n), n = n)
+})
+counts_df <- bind_rows(counts_list)
+counts_df
+
+# Rozdeleni: hypergeometricke (protoze bez vraceni z konecne populace)
+```
+
+## Závěr (stručně)
+
+```{r conclusion}
+cat("Populační průměr:", round(pop_mean,2), "cm\n")
+cat("Populační relativní četnost vyšších než", my_height, ":", round(pi_pop,3), "\n")
+cat("Pro n=3,4,5 jsou vypočteny přesné PMF/ECDF výběrových průměrů a relativních četností a vidíme, že bias je velmi malý (odhady jsou nestranné). Výsledky a grafy jsou v jednotlivých částech dokumentu.")
+```
 
