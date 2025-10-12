@@ -14,8 +14,8 @@ library(knitr)
 
 ```{r}
 
-#xlsx_path <- "D:/pavli/Dokumenty/git/vyberove-setreni/ukol1/Vysky.xlsx"
-xlsx_path <- "C:/Users/pavli/Documents/git/vyberove-setreni/ukol1/Vysky.xlsx"
+xlsx_path <- "D:/pavli/Dokumenty/git/vyberove-setreni/ukol1/Vysky.xlsx"
+#xlsx_path <- "C:/Users/pavli/Documents/git/vyberove-setreni/ukol1/Vysky.xlsx"
 
 df <- read_excel(xlsx_path, col_names = FALSE, skip = 2)
 
@@ -71,7 +71,7 @@ ggplot(cdf_df, aes(x = x, y = cdf, color = n)) +
 ## 2)
 Pro rozsahy výběru n=3,4,5 vypočtěte střední hodnotu a rozptyl výběrového průměru výšky studentů v sledované populaci. Jsou výběrové průměry nestranné odhady populačního průměru? Vypočtěte vychýlení (bias) pro tyto odhady.
 
-```{r sampling-stats, echo=FALSE}
+```{r sampling-stats}
 ns <- sort(unique(as.character(means_df$n)))
 results <- data.frame(n = integer(), empirical_mean = numeric(), empirical_var = numeric(), theoretical_var = numeric(), bias = numeric(), stringsAsFactors = FALSE)
 
@@ -94,7 +94,7 @@ kable(results, digits = 6, caption = 'Sampling distribution statistics computed 
 ## 3)
 Posuďte variabilitu odhadů pomocí vhodných popisných statistikami (variační koeficient, 1. a 9. decil, 1. a 3. kvartil, variační/mezikvartilové rozpětí).
 
-```{r variability-stats, echo=FALSE}
+```{r variability-stats}
 ns <- sort(unique(as.character(means_df$n)))
 var_stats <- data.frame(n = integer(), cv = numeric(), decil1 = numeric(), decil9 = numeric(), q1 = numeric(), q3 = numeric(), iqr = numeric(), R = numeric(), stringsAsFactors = FALSE)
 
@@ -116,16 +116,18 @@ kable(var_stats, digits = 6, caption = 'Variability descriptors for sample mean 
 
 # Pravděpodobnostní rozdělení relativní četnosti 
 
-## 4) Relativní četnost a počet studentů vyšších než vámi
+```{r proportion-counts}
+my_height <- 172
 
-```{r proportion-counts, echo=FALSE, fig.width=7, fig.height=4}
-# Define your height (change if needed)
-if (!exists('my_height')) my_height <- 172
-
-# number of students taller than 'you' in population
 K <- sum(pop_heights > my_height)
-cat('Population size N =', N, '- number taller than', my_height, 'K =', K, 'proportion p =', round(K/N,6), '\n')
+ration_height <- K / N
+print(ration_height)
+```
 
+## 1)
+Pravděpodobnostní rozdělení (pravděpodobnostní a distribuční funkci) výběrové relativní četnosti pro rozsahy výběru n=3,4,5 pro prostý náhodný výběr bez vracení.
+
+```{r}
 ns <- c(3,4,5)
 counts_df <- data.frame()
 rel_df <- data.frame()
@@ -137,14 +139,13 @@ for (n in ns) {
     rel_df <- rbind(rel_df, data.frame(n = n, rel = ks / n, prob = probs, cdf = cdfv))
 }
 
-library(knitr)
-cat('\n(i) PMF and CDF of relative frequency (k/n) for each n:\n')
-for (n in ns) {
-    cat('\n--- n =', n, '---\n')
-    tab <- rel_df[rel_df$n == n, c('rel','prob','cdf')]
-    print(kable(tab, digits = 6))
-}
+kable(rel_df[rel_df$n == 3, c('rel','prob','cdf')], digits = 6)
+kable(rel_df[rel_df$n == 4, c('rel','prob','cdf')], digits = 6)
+kable(rel_df[rel_df$n == 5, c('rel','prob','cdf')], digits = 6)
+```
 
+## 2) Pro rozsahy výběru n=3,4,5 vypočtěte střední hodnotu a rozptyl výběrové relativní četnosti. Jsou výběrové průměry nestranné odhady populační relativní četnosti? Vypotěte vychýlení (bias) pro tyto odhady.
+```{r}
 # (ii) mean, variance and bias for relative frequency (from pmf)
 res_prop <- data.frame(n = integer(), mean_rel = numeric(), var_rel = numeric(), theo_mean = numeric(), theo_var = numeric(), bias = numeric(), stringsAsFactors = FALSE)
 for (n in ns) {
