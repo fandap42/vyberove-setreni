@@ -9,6 +9,7 @@ library(readxl)
 library(ggplot2)
 library(dplyr)
 library(tidyr)
+library(knitr)
 ``` 
 
 ```{r}
@@ -19,7 +20,7 @@ xlsx_path <- "C:/Users/pavli/Documents/git/vyberove-setreni/ukol1/Vysky.xlsx"
 df <- read_excel(xlsx_path, col_names = FALSE, skip = 2)
 
 pop_heights <- as.numeric(df[[2]])
-pop_heights <- c(heights, 172)  
+pop_heights <- c(pop_heights, 172)  
 
 pop_mean <- mean(pop_heights)
 N <- length(pop_heights)
@@ -27,8 +28,9 @@ N <- length(pop_heights)
 ```
 
 # Pravděpodobnostní rozdělení výběrového průměru
-## 1) 
+## 1) a 4)
 Pravděpodobnostní rozdělení (pravděpodobnostní a distribuční funkci) výběrového průměru výšky studentů pro rozsahy výběru n=3,4,5 pro prostý náhodný výběr bez vracení.
+Graficky porovnejte pravděpodobnostní rozdělení pro různé rozsahy výběru.
 
 ```{r}
 ns <- c(3, 4, 5)
@@ -113,6 +115,79 @@ kable(var_stats, digits = 6, caption = 'Variability descriptors for sample mean 
 ```
 
 # Pravděpodobnostní rozdělení relativní četnosti 
+
+## 4) Relativní četnost a počet studentů vyšších než vámi
+
+```{r proportion-counts, echo=FALSE, fig.width=7, fig.height=4}
+# Define your height (change if needed)
+if (!exists('my_height')) my_height <- 172
+
+# number of students taller than 'you' in population
+K <- sum(pop_heights > my_height)
+cat('Population size N =', N, '- number taller than', my_height, 'K =', K, 'proportion p =', round(K/N,6), '\n')
+
+ns <- c(3,4,5)
+counts_df <- data.frame()
+rel_df <- data.frame()
+for (n in ns) {
+    ks <- 0:n
+    probs <- dhyper(ks, m = K, n = N - K, k = n)
+    cdfv <- cumsum(probs)
+    counts_df <- rbind(counts_df, data.frame(n = n, k = ks, prob = probs, cdf = cdfv))
+    rel_df <- rbind(rel_df, data.frame(n = n, rel = ks / n, prob = probs, cdf = cdfv))
+}
+
+library(knitr)
+cat('\n(i) PMF and CDF of relative frequency (k/n) for each n:\n')
+for (n in ns) {
+    cat('\n--- n =', n, '---\n')
+    tab <- rel_df[rel_df$n == n, c('rel','prob','cdf')]
+    print(kable(tab, digits = 6))
+}
+
+# (ii) mean, variance and bias for relative frequency (from pmf)
+res_prop <- data.frame(n = integer(), mean_rel = numeric(), var_rel = numeric(), theo_mean = numeric(), theo_var = numeric(), bias = numeric(), stringsAsFactors = FALSE)
+for (n in ns) {
+    d <- rel_df[rel_df$n == n, ]
+    mean_rel <- sum(d$rel * d$prob)
+    second <- sum((d$rel^2) * d$prob)
+    var_rel <- second - mean_rel^2
+    p <- K / N
+    theo_mean <- p
+    theo_var <- (p * (1 - p) * ((N - n) / (N - 1))) / n
+    bias <- mean_rel - theo_mean
+    res_prop <- rbind(res_prop, data.frame(n = n, mean_rel = mean_rel, var_rel = var_rel, theo_mean = theo_mean, theo_var = theo_var, bias = bias))
+}
+cat('\n(ii) Mean, variance and bias of relative frequency (k/n):\n')
+print(kable(res_prop, digits = 6))
+
+# (iii) Graphically compare pmfs for different n (relative frequency)
+library(ggplot2)
+g1 <- ggplot(rel_df, aes(x = rel, y = prob, group = factor(n), color = factor(n))) +
+    geom_step(direction = 'hv', size = 1) +
+    geom_point() +
+    labs(title = 'PMF of relative frequency (k/n) for different n', x = 'Relative frequency (k/n)', y = 'Probability', color = 'n') +
+    theme_minimal()
+
+g2 <- ggplot(rel_df, aes(x = rel, y = cdf, group = factor(n), color = factor(n))) +
+    geom_step(direction = 'hv', size = 1) +
+    labs(title = 'CDF of relative frequency (k/n) for different n', x = 'Relative frequency (k/n)', y = 'CDF', color = 'n') +
+    theme_minimal()
+
+print(g1)
+print(g2)
+
+# (iv) Distribution of counts k is hypergeometric
+cat('\n(iv) Distribution of counts k (number of students taller than you) for each n. This is Hypergeometric(N, K, n).\n')
+for (n in ns) {
+    cat('\n--- n =', n, '---\n')
+    tabc <- counts_df[counts_df$n == n, c('k','prob','cdf')]
+    print(kable(tabc, digits = 6))
+}
+
+cat('\nPozn.: Distribuce počtu úspěchů při výběru bez vracení je hypergeometrická (Hypergeometric). Parametry: populace N, počet úspěchů K, rozsah výběru n.\n')
+```
+
 
 
 
