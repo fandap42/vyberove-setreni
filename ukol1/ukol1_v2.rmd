@@ -12,7 +12,7 @@ library(tidyr)
 library(knitr)
 ``` 
 
-```{r}
+```{r, message = FALSE, warning = FALSE}
 
 xlsx_path <- "D:/pavli/Dokumenty/git/vyberove-setreni/ukol1/Vysky.xlsx"
 #xlsx_path <- "C:/Users/pavli/Documents/git/vyberove-setreni/ukol1/Vysky.xlsx"
@@ -32,7 +32,7 @@ N <- length(pop_heights)
 Pravděpodobnostní rozdělení (pravděpodobnostní a distribuční funkci) výběrového průměru výšky studentů pro rozsahy výběru n=3,4,5 pro prostý náhodný výběr bez vracení.
 Graficky porovnejte pravděpodobnostní rozdělení pro různé rozsahy výběru.
 
-```{r}
+```{r, message = FALSE, warning = FALSE}
 ns <- c(3, 4, 5)
 
 means_list <- lapply(ns, function(n) as.numeric(combn(pop_heights, n, FUN = mean)))
@@ -144,9 +144,10 @@ kable(rel_df[rel_df$n == 4, c('rel','prob','cdf')], digits = 6)
 kable(rel_df[rel_df$n == 5, c('rel','prob','cdf')], digits = 6)
 ```
 
-## 2) Pro rozsahy výběru n=3,4,5 vypočtěte střední hodnotu a rozptyl výběrové relativní četnosti. Jsou výběrové průměry nestranné odhady populační relativní četnosti? Vypotěte vychýlení (bias) pro tyto odhady.
+## 2) 
+Pro rozsahy výběru n=3,4,5 vypočtěte střední hodnotu a rozptyl výběrové relativní četnosti. Jsou výběrové průměry nestranné odhady populační relativní četnosti? Vypotěte vychýlení (bias) pro tyto odhady.
+
 ```{r}
-# (ii) mean, variance and bias for relative frequency (from pmf)
 res_prop <- data.frame(n = integer(), mean_rel = numeric(), var_rel = numeric(), theo_mean = numeric(), theo_var = numeric(), bias = numeric(), stringsAsFactors = FALSE)
 for (n in ns) {
     d <- rel_df[rel_df$n == n, ]
@@ -159,26 +160,40 @@ for (n in ns) {
     bias <- mean_rel - theo_mean
     res_prop <- rbind(res_prop, data.frame(n = n, mean_rel = mean_rel, var_rel = var_rel, theo_mean = theo_mean, theo_var = theo_var, bias = bias))
 }
-cat('\n(ii) Mean, variance and bias of relative frequency (k/n):\n')
-print(kable(res_prop, digits = 6))
+kable(res_prop, digits = 6)
+```
 
-# (iii) Graphically compare pmfs for different n (relative frequency)
-library(ggplot2)
-g1 <- ggplot(rel_df, aes(x = rel, y = prob, group = factor(n), color = factor(n))) +
+## 3) 
+Graficky porovnejte pravděpodobnostní rozdělení pro různé rozsahy výběru.
+
+```{r}
+rel_df <- rel_df %>% arrange(n, rel)
+rel_df <- rel_df %>% mutate(rel = as.numeric(rel))
+rel_df <- rel_df %>% group_by(n) %>% mutate(rel_lab = sprintf("%.2f", rel)) %>% ungroup()
+
+ggplot(rel_df, aes(x = rel_lab, y = prob)) +
+    geom_col(fill = 'grey80', color = 'black', width = 0.8) +
+    facet_wrap(~ n, nrow = 1, scales = 'free_x') +
+    labs(title = 'P(X/n) — PMF of relative frequency (k/n) for different n', x = NULL, y = 'P(X/n)') +
+    theme_minimal() +
+    theme(strip.text = element_text(face = 'bold'),
+                axis.text.x = element_text(angle = 0))
+
+ggplot(rel_df, aes(x = rel, y = cdf)) +
     geom_step(direction = 'hv', size = 1) +
-    geom_point() +
-    labs(title = 'PMF of relative frequency (k/n) for different n', x = 'Relative frequency (k/n)', y = 'Probability', color = 'n') +
-    theme_minimal()
+    facet_wrap(~ n, nrow = 1, scales = 'free_x') +
+    scale_x_continuous(labels = function(x) sprintf("%.2f", x)) +
+    labs(title = 'CDF of relative frequency (k/n) for different n', x = 'Relative frequency (k/n)', y = 'CDF') +
+    theme_minimal() +
+    theme(strip.text = element_text(face = 'bold'))
+```
 
-g2 <- ggplot(rel_df, aes(x = rel, y = cdf, group = factor(n), color = factor(n))) +
-    geom_step(direction = 'hv', size = 1) +
-    labs(title = 'CDF of relative frequency (k/n) for different n', x = 'Relative frequency (k/n)', y = 'CDF', color = 'n') +
-    theme_minimal()
+## 4)
+Určete pravděpodobnostní rozdělení (pravděpodobnostní a distribuční funkci) počtu
+studentů, kteří jsou vyšší než vy, pro rozsahy výběru n=3,4,5 pro prostý náhodný výběr
+bez vracení. O jaké rozdělení se jedná?
 
-print(g1)
-print(g2)
-
-# (iv) Distribution of counts k is hypergeometric
+```{r}
 cat('\n(iv) Distribution of counts k (number of students taller than you) for each n. This is Hypergeometric(N, K, n).\n')
 for (n in ns) {
     cat('\n--- n =', n, '---\n')
