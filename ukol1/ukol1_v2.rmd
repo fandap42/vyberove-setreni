@@ -1,0 +1,118 @@
+---
+title: "Úkol 1"
+output: html_document
+date: "2025-20-01"
+---
+
+```{r setup, include=FALSE}
+library(readxl)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+``` 
+
+```{r}
+
+#xlsx_path <- "D:/pavli/Dokumenty/git/vyberove-setreni/ukol1/Vysky.xlsx"
+xlsx_path <- "C:/Users/pavli/Documents/git/vyberove-setreni/ukol1/Vysky.xlsx"
+
+df <- read_excel(xlsx_path, col_names = FALSE, skip = 2)
+
+pop_heights <- as.numeric(df[[2]])
+pop_heights <- c(heights, 172)  
+
+pop_mean <- mean(pop_heights)
+N <- length(pop_heights)
+
+```
+
+# Pravděpodobnostní rozdělení výběrového průměru
+## 1) 
+Pravděpodobnostní rozdělení (pravděpodobnostní a distribuční funkci) výběrového průměru výšky studentů pro rozsahy výběru n=3,4,5 pro prostý náhodný výběr bez vracení.
+
+```{r}
+ns <- c(3, 4, 5)
+
+means_list <- lapply(ns, function(n) as.numeric(combn(pop_heights, n, FUN = mean)))
+names(means_list) <- as.character(ns)
+
+means_df <- do.call(rbind, lapply(names(means_list), function(n) {
+    data.frame(mean = means_list[[n]], n = factor(n))
+}))
+
+x_grid <- seq(min(means_df$mean), max(means_df$mean), length.out = 512)
+
+pdf_df <- do.call(rbind, lapply(names(means_list), function(n) {
+    m <- means_list[[n]]
+    d <- density(m, from = min(x_grid), to = max(x_grid), n = length(x_grid))
+    data.frame(x = d$x, density = d$y, n = factor(n))
+}))
+
+cdf_df <- do.call(rbind, lapply(names(means_list), function(n) {
+    m <- means_list[[n]]
+    ec <- ecdf(m)
+    data.frame(x = x_grid, cdf = ec(x_grid), n = factor(n))
+}))
+
+ggplot(pdf_df, aes(x = x, y = density, color = n, fill = n)) +
+    geom_line(size = 1) +
+    geom_ribbon(aes(ymin = 0, ymax = density), alpha = 0.15, color = NA) +
+    labs(title = "Density estimate of sample mean (pdf)", x = "Sample mean", y = "Density", color = "n", fill = "n") +
+    theme_minimal()
+
+ggplot(cdf_df, aes(x = x, y = cdf, color = n)) +
+    geom_line(size = 1) +
+    labs(title = "Empirical CDF of sample mean", x = "Sample mean", y = "ECDF", color = "n") +
+    theme_minimal()
+```
+
+## 2)
+Pro rozsahy výběru n=3,4,5 vypočtěte střední hodnotu a rozptyl výběrového průměru výšky studentů v sledované populaci. Jsou výběrové průměry nestranné odhady populačního průměru? Vypočtěte vychýlení (bias) pro tyto odhady.
+
+```{r sampling-stats, echo=FALSE}
+ns <- sort(unique(as.character(means_df$n)))
+results <- data.frame(n = integer(), empirical_mean = numeric(), empirical_var = numeric(), theoretical_var = numeric(), bias = numeric(), stringsAsFactors = FALSE)
+
+pop_sigma2 <- var(pop_heights)
+
+for (n_chr in ns) {
+    n_num <- as.numeric(n_chr)
+    means_n <- means_df$mean[as.character(means_df$n) == n_chr]
+    emp_mean <- mean(means_n)
+    emp_var <- var(means_n)
+    theo_var <- (pop_sigma2 / n_num) * ((N - n_num) / (N - 1))
+    bias <- emp_mean - pop_mean
+    results <- rbind(results, data.frame(n = n_num, empirical_mean = emp_mean, empirical_var = emp_var, theoretical_var = theo_var, bias = bias))
+}
+
+kable(results, digits = 6, caption = 'Sampling distribution statistics computed from exact sample means (means_df)')
+
+```
+
+## 3)
+Posuďte variabilitu odhadů pomocí vhodných popisných statistikami (variační koeficient, 1. a 9. decil, 1. a 3. kvartil, variační/mezikvartilové rozpětí).
+
+```{r variability-stats, echo=FALSE}
+ns <- sort(unique(as.character(means_df$n)))
+var_stats <- data.frame(n = integer(), cv = numeric(), decil1 = numeric(), decil9 = numeric(), q1 = numeric(), q3 = numeric(), iqr = numeric(), R = numeric(), stringsAsFactors = FALSE)
+
+for (n_chr in ns) {
+    n_num <- as.numeric(n_chr)
+    means_n <- means_df$mean[as.character(means_df$n) == n_chr]
+    mu <- mean(means_n)
+    sd_n <- sd(means_n)
+    cv <- sd_n / mu
+    decs <- quantile(means_n, probs = c(0.1, 0.9), names = FALSE)
+    qs <- quantile(means_n, probs = c(0.25, 0.75), names = FALSE)
+    iqr_n <- qs[2] - qs[1]
+    R <- max(means_n) - min(means_n)
+    var_stats <- rbind(var_stats, data.frame(n = n_num, cv = cv, decil1 = decs[1], decil9 = decs[2], q1 = qs[1], q3 = qs[2], iqr = iqr_n, R = R))
+}
+
+kable(var_stats, digits = 6, caption = 'Variability descriptors for sample mean by n')
+```
+
+# Pravděpodobnostní rozdělení relativní četnosti 
+
+
+

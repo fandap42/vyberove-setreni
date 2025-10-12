@@ -20,7 +20,8 @@ library(tidyr)
 
 
 ```{r}
-xlsx_path <- "D:/pavli/Dokumenty/git/vyberove-setreni/ukol1/Vysky.xlsx"
+#xlsx_path <- "D:/pavli/Dokumenty/git/vyberove-setreni/ukol1/Vysky.xlsx"
+xlsx_path <- "C:/Users/pavli/Documents/git/vyberove-setreni/ukol1/Vysky.xlsx"
 
 df <- read_excel(xlsx_path, col_names = FALSE)
 
@@ -109,17 +110,14 @@ print(p_pmf)
 ### ii) Střední hodnota a rozptyl výběrového průměru; bias
 
 ```{r mean-var-bias}
-## Convert stats_means (list) to a tidy data frame and show as table
 df_stats_means <- bind_rows(lapply(seq_along(stats_means), function(i) {
   s <- stats_means[[i]]
   data.frame(n = ns[i], mean = s$mean, variance = s$var, bias = s$bias)
 }))
 df_stats_means$n <- factor(df_stats_means$n)
 
-# Print as a neat table in the knit output
 knitr::kable(df_stats_means, digits = 4, caption = "Střední hodnota, rozptyl a bias výběrového průměru")
 
-# Zhodnocení nestrannosti: bias blízko 0 -> nestranný (tabulka bias)
 df_bias <- df_stats_means %>% select(n, bias)
 knitr::kable(df_bias, digits = 4, caption = "Bias pro jednotlivá n")
 ```
@@ -130,7 +128,7 @@ knitr::kable(df_bias, digits = 4, caption = "Bias pro jednotlivá n")
 variability_summary <- lapply(means_list, function(v) {
   mu <- mean(v)
   sdv <- sd(v)
-  cv <- sdv/mu
+  cv <- sdv/mu 
   dec1 <- quantile(v, probs = 0.1, type = 4)
   dec9 <- quantile(v, probs = 0.9, type = 4)
   q1 <- quantile(v, probs = 0.25, type = 4)
