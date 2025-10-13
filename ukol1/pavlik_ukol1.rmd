@@ -133,12 +133,12 @@ for (n in ns) {
     probs <- dhyper(ks, m = K, n = N - K, k = n)
     cdfv <- cumsum(probs)
     counts_df <- rbind(counts_df, data.frame(n = n, k = ks, prob = probs, cdf = cdfv))
-    rel_df <- rbind(rel_df, data.frame(n = n, rel = ks / n, prob = probs, cdf = cdfv))
+    rel_df <- rbind(rel_df, data.frame(n = n, k=ks, rel = ks / n, prob = probs, cdf = cdfv)) 
 }
 
-kable(rel_df[rel_df$n == 3, c('rel','prob','cdf')], digits = 6)
-kable(rel_df[rel_df$n == 4, c('rel','prob','cdf')], digits = 6)
-kable(rel_df[rel_df$n == 5, c('rel','prob','cdf')], digits = 6)
+kable(rel_df[rel_df$n == 3, c("k",'rel','prob','cdf')], digits = 6)
+kable(rel_df[rel_df$n == 4, c("k",'rel','prob','cdf')], digits = 6)
+kable(rel_df[rel_df$n == 5, c("k",'rel','prob','cdf')], digits = 6) 
 ```
 
 ## 2) 
@@ -191,6 +191,27 @@ bez vracení. O jaké rozdělení se jedná?
 
 **Počet studentů vyšších než já má hypergeometrické rozdělení.**
 
+```{r}
+rel_df <- rel_df %>% arrange(n, rel)
+rel_df <- rel_df %>% mutate(rel = as.numeric(rel))
+rel_df <- rel_df %>% group_by(n) %>% mutate(rel_lab = sprintf("%.2f", rel)) %>% ungroup()
+
+ggplot(rel_df, aes(x = k, y = prob)) +
+    geom_col(fill = 'grey80', color = 'black', width = 0.8) +
+    facet_wrap(~ n, nrow = 1, scales = 'free_x') +
+    labs(title = 'Hustoty pravděpodobnosti', x = NULL, y = 'P(X/n)') +
+    theme_minimal() +
+    theme(strip.text = element_text(face = 'bold'),
+                axis.text.x = element_text(angle = 0))
+
+ggplot(rel_df, aes(x = k, y = cdf)) +
+    geom_step(direction = 'hv', size = 1) +
+    facet_wrap(~ n, nrow = 1, scales = 'free_x') +
+    scale_x_continuous(labels = function(x) sprintf("%.2f", x)) +
+    labs(title = 'Distribuční funkce', x = 'Relative frequency (k/n)', y = 'CDF') +
+    theme_minimal() +
+    theme(strip.text = element_text(face = 'bold'))
+```
 
 
 
