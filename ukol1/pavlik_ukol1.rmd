@@ -59,12 +59,12 @@ cdf_df <- do.call(rbind, lapply(names(means_list), function(n) {
 ggplot(pdf_df, aes(x = x, y = density, color = n, fill = n)) +
     geom_line(size = 1) +
     geom_ribbon(aes(ymin = 0, ymax = density), alpha = 0.15, color = NA) +
-    labs(title = "Density estimate of sample mean (pdf)", x = "Sample mean", y = "Density", color = "n", fill = "n") +
+    labs(title = "Hustota pravděpodobnosti", x = "Sample mean", y = "Density", color = "n", fill = "n") +
     theme_minimal()
 
 ggplot(cdf_df, aes(x = x, y = cdf, color = n)) +
     geom_line(size = 1) +
-    labs(title = "Empirical CDF of sample mean", x = "Sample mean", y = "ECDF", color = "n") +
+    labs(title = "Distribuční funkce", x = "Sample mean", y = "ECDF", color = "n") +
     theme_minimal()
 ```
 
@@ -73,21 +73,18 @@ Pro rozsahy výběru n=3,4,5 vypočtěte střední hodnotu a rozptyl výběrové
 
 ```{r sampling-stats}
 ns <- sort(unique(as.character(means_df$n)))
-results <- data.frame(n = integer(), empirical_mean = numeric(), empirical_var = numeric(), theoretical_var = numeric(), bias = numeric(), stringsAsFactors = FALSE)
-
-pop_sigma2 <- var(pop_heights)
+results <- data.frame(n = integer(), mean = numeric(), var = numeric(), bias = numeric(), stringsAsFactors = FALSE)
 
 for (n_chr in ns) {
     n_num <- as.numeric(n_chr)
     means_n <- means_df$mean[as.character(means_df$n) == n_chr]
     emp_mean <- mean(means_n)
-    emp_var <- var(means_n)
-    theo_var <- (pop_sigma2 / n_num) * ((N - n_num) / (N - 1))
+    theo_var <- var(means_n) * (length(means_n) - 1)/length(means_n)
     bias <- emp_mean - pop_mean
-    results <- rbind(results, data.frame(n = n_num, empirical_mean = emp_mean, empirical_var = emp_var, theoretical_var = theo_var, bias = bias))
+    results <- rbind(results, data.frame(n = n_num, mean = emp_mean, var = theo_var, bias = bias))
 }
 
-kable(results, digits = 6, caption = 'Sampling distribution statistics computed from exact sample means (means_df)')
+kable(results, digits = 6)
 
 ```
 
@@ -111,7 +108,7 @@ for (n_chr in ns) {
     var_stats <- rbind(var_stats, data.frame(n = n_num, cv = cv, decil1 = decs[1], decil9 = decs[2], q1 = qs[1], q3 = qs[2], iqr = iqr_n, R = R))
 }
 
-kable(var_stats, digits = 6, caption = 'Variability descriptors for sample mean by n')
+kable(var_stats, digits = 6)
 ```
 
 # Pravděpodobnostní rozdělení relativní četnosti 
@@ -148,20 +145,19 @@ kable(rel_df[rel_df$n == 5, c('rel','prob','cdf')], digits = 6)
 Pro rozsahy výběru n=3,4,5 vypočtěte střední hodnotu a rozptyl výběrové relativní četnosti. Jsou výběrové průměry nestranné odhady populační relativní četnosti? Vypotěte vychýlení (bias) pro tyto odhady.
 
 ```{r}
-res_prop <- data.frame(n = integer(), mean_rel = numeric(), var_rel = numeric(), theo_mean = numeric(), theo_var = numeric(), bias = numeric(), stringsAsFactors = FALSE)
+res_prop <- data.frame(n = integer(), mean_rel = numeric(), var_rel = numeric(), bias = numeric(), stringsAsFactors = FALSE)
 for (n in ns) {
     d <- rel_df[rel_df$n == n, ]
     mean_rel <- sum(d$rel * d$prob)
     second <- sum((d$rel^2) * d$prob)
     var_rel <- second - mean_rel^2
     p <- K / N
-    theo_mean <- p
-    theo_var <- (p * (1 - p) * ((N - n) / (N - 1))) / n
-    bias <- mean_rel - theo_mean
-    res_prop <- rbind(res_prop, data.frame(n = n, mean_rel = mean_rel, var_rel = var_rel, theo_mean = theo_mean, theo_var = theo_var, bias = bias))
+    bias <- mean_rel - p
+    res_prop <- rbind(res_prop, data.frame(n = n, mean_rel = mean_rel, var_rel = var_rel, bias = bias))
 }
 kable(res_prop, digits = 6)
 ```
+Bias je velmi malý, odhady jsou tedy nestranné.
 
 ## 3) 
 Graficky porovnejte pravděpodobnostní rozdělení pro různé rozsahy výběru.
@@ -174,7 +170,7 @@ rel_df <- rel_df %>% group_by(n) %>% mutate(rel_lab = sprintf("%.2f", rel)) %>% 
 ggplot(rel_df, aes(x = rel_lab, y = prob)) +
     geom_col(fill = 'grey80', color = 'black', width = 0.8) +
     facet_wrap(~ n, nrow = 1, scales = 'free_x') +
-    labs(title = 'P(X/n) — PMF of relative frequency (k/n) for different n', x = NULL, y = 'P(X/n)') +
+    labs(title = 'Hustoty pravděpodobnosti', x = NULL, y = 'P(X/n)') +
     theme_minimal() +
     theme(strip.text = element_text(face = 'bold'),
                 axis.text.x = element_text(angle = 0))
@@ -183,7 +179,7 @@ ggplot(rel_df, aes(x = rel, y = cdf)) +
     geom_step(direction = 'hv', size = 1) +
     facet_wrap(~ n, nrow = 1, scales = 'free_x') +
     scale_x_continuous(labels = function(x) sprintf("%.2f", x)) +
-    labs(title = 'CDF of relative frequency (k/n) for different n', x = 'Relative frequency (k/n)', y = 'CDF') +
+    labs(title = 'Distribuční funkce', x = 'Relative frequency (k/n)', y = 'CDF') +
     theme_minimal() +
     theme(strip.text = element_text(face = 'bold'))
 ```
@@ -193,16 +189,7 @@ Určete pravděpodobnostní rozdělení (pravděpodobnostní a distribuční fun
 studentů, kteří jsou vyšší než vy, pro rozsahy výběru n=3,4,5 pro prostý náhodný výběr
 bez vracení. O jaké rozdělení se jedná?
 
-```{r}
-cat('\n(iv) Distribution of counts k (number of students taller than you) for each n. This is Hypergeometric(N, K, n).\n')
-for (n in ns) {
-    cat('\n--- n =', n, '---\n')
-    tabc <- counts_df[counts_df$n == n, c('k','prob','cdf')]
-    print(kable(tabc, digits = 6))
-}
-
-cat('\nPozn.: Distribuce počtu úspěchů při výběru bez vracení je hypergeometrická (Hypergeometric). Parametry: populace N, počet úspěchů K, rozsah výběru n.\n')
-```
+**Počet studentů vyšších než já má hypergeometrické rozdělení.**
 
 
 
