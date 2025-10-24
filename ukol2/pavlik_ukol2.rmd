@@ -1,0 +1,13 @@
+---
+title: "Úkol 1"
+output: html_document
+date: "2025-20-01"
+---
+
+```{r setup, include=FALSE}
+library(readxl)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(knitr)
+``` 
