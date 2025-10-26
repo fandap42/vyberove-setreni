@@ -1,13 +1,251 @@
 ---
-title: "Úkol 1"
+title: "Výběrová šetření - Domácí úkol 2"
+author: ""
+date: "`r format(Sys.time(), '%d. %m. %Y')`"
 output: html_document
-date: "2025-20-01"
 ---
 
 ```{r setup, include=FALSE}
-library(readxl)
-library(ggplot2)
-library(dplyr)
-library(tidyr)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 library(knitr)
-``` 
+#setwd("ukol2")
+```
+
+```{r params}
+# Parametry dle zadani
+MM <- 6
+DD <- 18
+R <- 10 + abs(MM - 6)
+P_true <- (3 + 0.5 * abs(DD - 16)) / 100
+```
+
+## 1. Rozsah výběru pro odhad průměru
+
+```{r create_population_mean}
+mzdy_data <- read.csv("Mzda.csv", header = TRUE)
+mzdy_vector <- mzdy_data$Mzda
+
+population_mzdy <- rep(mzdy_vector, times = R)
+
+N_mzdy <- length(population_mzdy)
+mean_population_mzdy <- mean(population_mzdy)
+var_population_mzdy <- var(population_mzdy)
+S2_mzdy <- var_population_mzdy * (N_mzdy - 1) / N_mzdy
+
+cat(paste("Velikost základního souboru (N):", N_mzdy, "\n"))
+cat(paste("Populační průměr (Y_bar):", round(mean_population_mzdy, 2), "Kč\n"))
+cat(paste("Populační rozptyl (S^2):", round(S2_mzdy, 2), "\n"))
+```
+
+### i) Minimální rozsah výběru
+
+Pro stanovení minimálního rozsahu výběru `n` použijeme vzorec pro prostý náhodný výběr bez vracení:
+$$ n = \frac{1}{\frac{\Delta^2}{z_{1-\alpha/2}^2 \cdot S^2} + \frac{1}{N}} $$
+kde `\(\Delta\)` je požadovaná polovina šířky intervalu spolehlivosti.
+
+```{r sample_size_mean}
+get_sample_size_mean <- function(N, S2, delta, conf_level) {
+  alpha <- 1 - conf_level
+  z <- qnorm(1 - alpha / 2)
+  n <- 1 / ( (delta^2 / (z^2 * S2)) + (1/N) )
+  return(ceiling(n))
+}
+
+confidence_levels <- c(0.90, 0.95, 0.99)
+deltas_mean <- c(2000, 1500, 1000) / 2
+
+results_mean <- data.frame()
+
+for (conf in confidence_levels) {
+  for (delta in deltas_mean) {
+    n <- get_sample_size_mean(N_mzdy, S2_mzdy, delta, conf)
+    results_mean <- rbind(results_mean, data.frame(
+      Spolehlivost = paste0(conf * 100, "%", sep=""),
+      Sirka_intervalu = delta * 2,
+      Rozsah_vyberu = n
+    ))
+  }
+}
+
+kable(results_mean, caption = "Minimální rozsahy výběru pro odhad průměrné mzdy")
+```
+
+Maximální počet zaměstnanců, které máme k dispozici, je `100 * R = 100 * 10 = 1000`.
+Z tabulky je patrné, že s našimi zdroji jsme schopni dosáhnout přesnosti s šířkou intervalu 2000 Kč při všech úrovních spolehlivosti a přesnosti 1500 Kč při 90% a 95% spolehlivosti. Nejpřesnější odhad (šířka 1000 Kč) je při vyšších spolehlivosti 99 % již mimo naše možnosti.
+
+### ii) Simulace
+
+Zvolíme si kombinaci 95% spolehlivosti a požadované šířky intervalu 1500 Kč (`\(\Delta = 750\)` Kč). Teoretický rozsah výběru pro tuto kombinaci je `n = ` `r results_mean[results_mean$Spolehlivost == '95%' & results_mean$Sirka_intervalu == 1500, 'Rozsah_vyberu']`.
+
+```{r simulation_mean}
+conf_level_sim <- 0.95
+delta_sim <- 750
+n_sim <- get_sample_size_mean(N_mzdy, S2_mzdy, delta_sim, conf_level_sim)
+num_simulations <- 1000
+
+sample_means <- numeric(num_simulations)
+interval_widths <- numeric(num_simulations)
+coverage <- logical(num_simulations)
+
+alpha_sim <- 1 - conf_level_sim
+z_sim <- qnorm(1 - alpha_sim / 2)
+
+set.seed(123)
+for (i in 1:num_simulations) {
+  sample_data <- sample(population_mzdy, n_sim, replace = FALSE)
+  
+  sample_mean <- mean(sample_data)
+  sample_var <- var(sample_data)
+  
+  se <- sqrt((1 - n_sim / N_mzdy) * sample_var / n_sim)
+  t_val <- qt(1 - alpha_sim / 2, df = n_sim - 1)
+  half_width <- t_val * se
+  
+  lower_bound <- sample_mean - half_width
+  upper_bound <- sample_mean + half_width
+  
+  sample_means[i] <- sample_mean
+  interval_widths[i] <- 2 * half_width
+  coverage[i] <- (lower_bound <= mean_population_mzdy && upper_bound >= mean_population_mzdy)
+}
+
+avg_interval_width <- mean(interval_widths)
+coverage_rate <- mean(coverage)
+
+cat(paste("Teoretická šířka intervalu:", 2 * delta_sim, "Kč\n"))
+cat(paste("Průměrná šířka intervalu ze simulací:", round(avg_interval_width, 2), "Kč\n"))
+cat(paste("Teoretická spolehlivost:", conf_level_sim * 100, " %\n"))
+cat(paste("Dosažená spolehlivost (pokrytí):", coverage_rate * 100, " %\n"))
+```
+
+Průměrná šířka intervalu ze simulací se velmi blíží teoretické požadované šířce (1500 Kč). Dosažená spolehlivost (míra pokrytí) je také velmi blízko teoretické 95% spolehlivosti. To potvrzuje správnost našeho teoretického výpočtu rozsahu výběru.
+
+---
+
+## 2. Rozsah výběru pro relativní četnosti
+
+### i) Minimální rozsah výběru
+
+```{r sample_size_prop}
+get_sample_size_prop <- function(N, P_prior, delta, conf_level) {
+  alpha <- 1 - conf_level
+  z <- qnorm(1 - alpha / 2)
+  S2 <- P_prior * (1 - P_prior)
+  n <- 1 / ( (delta^2 / (z^2 * S2)) + (1/N) )
+  return(ceiling(n))
+}
+
+P_prior <- 0.10 
+confidence_levels_prop <- c(0.95, 0.99)
+deltas_prop <- c(0.02, 0.01, 0.005) / 2
+
+population_levels <- data.frame(
+  Uroven = c("Celostátní", "Kraj (velký)", "Kraj (malý)", "Okresní"),
+  N = c(5000000, 600000, 250000, 25000) 
+)
+
+for (i in 1:nrow(population_levels)) {
+  level_name <- population_levels$Uroven[i]
+  N_prop <- population_levels$N[i]
+  
+  results_prop <- data.frame()
+  for (conf in confidence_levels_prop) {
+    for (delta in deltas_prop) {
+      n <- get_sample_size_prop(N_prop, P_prior, delta, conf)
+      results_prop <- rbind(results_prop, data.frame(
+        Spolehlivost = paste0(conf * 100, "%", sep=""),
+        Sirka_intervalu = paste0(delta * 2 * 100, "%", sep=""),
+        Rozsah_vyberu = n
+      ))
+    }
+  }
+  
+  print(kable(results_prop, caption = paste("Minimální rozsahy výběru pro", level_name, "(N =", N_prop, ")")))
+}
+```
+
+### ii) Simulace
+
+Zvolíme si kombinaci 95% spolehlivosti a požadované šířky intervalu 1 % (`\(\Delta = 0.005\)`) na celostátní úrovni. Skutečný podíl voličů je `P = 4 %`.
+
+```{r simulation_prop}
+conf_level_sim_prop <- 0.95
+delta_sim_prop <- 0.005
+N_sim_prop <- population_levels$N[1]
+n_sim_prop <- get_sample_size_prop(N_sim_prop, P_prior, delta_sim_prop, conf_level_sim_prop)
+num_simulations_prop <- 1000
+
+population_prop <- rbinom(N_sim_prop, 1, P_true)
+
+interval_widths_prop <- numeric(num_simulations_prop)
+coverage_prop <- logical(num_simulations_prop)
+
+alpha_sim_prop <- 1 - conf_level_sim_prop
+z_sim_prop <- qnorm(1 - alpha_sim_prop / 2)
+
+for (i in 1:num_simulations_prop) {
+  sample_data_prop <- sample(population_prop, n_sim_prop, replace = FALSE)
+  
+  p_hat <- mean(sample_data_prop)
+  
+  se_prop <- sqrt((1 - n_sim_prop / N_sim_prop) * p_hat * (1 - p_hat) / (n_sim_prop - 1))
+  half_width_prop <- z_sim_prop * se_prop
+  
+  lower_bound_prop <- p_hat - half_width_prop
+  upper_bound_prop <- p_hat + half_width_prop
+  
+  interval_widths_prop[i] <- 2 * half_width_prop
+  coverage_prop[i] <- (lower_bound_prop <= P_true && upper_bound_prop >= P_true)
+}
+
+avg_interval_width_prop <- mean(interval_widths_prop)
+coverage_rate_prop <- mean(coverage_prop)
+
+cat(paste("Teoretická šířka intervalu:", 2 * delta_sim_prop * 100, " %\n"))
+cat(paste("Průměrná šířka intervalu ze simulací:", round(avg_interval_width_prop * 100, 3), " %\n"))
+cat(paste("Teoretická spolehlivost:", conf_level_sim_prop * 100, " %\n"))
+cat(paste("Dosažená spolehlivost (pokrytí):", coverage_rate_prop * 100, " %\n"))
+```
+
+### iii) Bonusová úloha
+
+Simulací odhadneme pravděpodobnosti správného úsudku na základě bodového odhadu `p_hat` při `n=1000`. Skutečný podíl voličů je `P = 4 %`.
+
+```{r bonus}
+n_bonus <- 1000
+num_sim_bonus <- 10000 
+p_hats <- numeric(num_sim_bonus)
+N_bonus <- population_levels$N[1]
+
+population_bonus_true <- rbinom(N_bonus, 1, P_true)
+
+for (i in 1:num_sim_bonus) {
+  sample_bonus <- sample(population_bonus_true, n_bonus, replace = FALSE)
+  p_hats[i] <- mean(sample_bonus)
+}
+
+# a) P(p_hat >= 0.03) -> narok na statni podporu
+prob_support <- mean(p_hats >= 0.03)
+cat(paste("a) Odhadovaná P, že hnutí získá podporu (p_hat >= 3%):", round(prob_support, 4), "\n"))
+
+# b) P(p_hat >= 0.05 | P >= 0.05) -> dostane se do parlamentu
+#    Protoze nas skutecny podil P=0.06 je >= 0.05, muzeme pouzit nasi simulaci
+prob_parliament_if_in <- mean(p_hats >= 0.05)
+cat(paste("b) Odhadovaná P, že správně usoudíme vstup do parlamentu (p_hat >= 5% | P=6%):", round(prob_parliament_if_in, 4), "\n"))
+
+# c) P(p_hat < 0.05 | P < 0.05) -> nedostane se do parlamentu
+#    Musime provest novou simulaci s P < 0.05, zvolme napr. P = 4%
+P_under_5 <- 0.04
+population_bonus_under_5 <- rbinom(N_bonus, 1, P_under_5)
+p_hats_under_5 <- numeric(num_sim_bonus)
+
+for (i in 1:num_sim_bonus) {
+  sample_bonus_under_5 <- sample(population_bonus_under_5, n_bonus, replace = FALSE)
+  p_hats_under_5[i] <- mean(sample_bonus_under_5)
+}
+prob_no_parliament_if_out <- mean(p_hats_under_5 < 0.05)
+cat(paste("c) Odhadovaná P, že správně usoudíme nevstup do parlamentu (p_hat < 5% | P=4%):", round(prob_no_parliament_if_out, 4), "\n"))
+```
+
+
+---
