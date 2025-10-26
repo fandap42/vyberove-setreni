@@ -1,0 +1,178 @@
+---
+title: "Domácí úkol 3 - Poměrový a regresní odhad"
+author: ""
+date: "`r format(Sys.time(), '%d. %m. %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# Načtení potřebných knihoven
+library(sampling)
+library(survey)
+```
+
+## Úvod
+
+Tento dokument obsahuje řešení třetího domácího úkolu z předmětu 4ST414. Cílem je aplikovat techniky poměrového a regresního odhadu na reálných datech švédských municipalit. Veškeré komentáře a popisky jsou v češtině, zatímco kód je psán v angličtině.
+
+## 1. Příprava dat
+
+Nejprve načteme data `MU284` z knihovny `sampling`. Dále provedeme filtrování dat tak, abychom pracovali pouze s municipalitami, které měly v roce 1975 (`P75`) maximálně 150 tisíc obyvatel.
+
+```{r data_preparation}
+# Načtení datového souboru
+data(MU284)
+
+# Filtrace dat pro municipality s P75 <= 150
+target_population <- MU284[MU284$P75 <= 150, ]
+
+# Velikost cílové populace
+N <- nrow(target_population)
+
+# Populační úhrny a průměry pro cílovou populaci
+total_p75 <- sum(target_population$P75)
+total_p85 <- sum(target_population$P85)
+mean_p75 <- mean(target_population$P75)
+mean_p85 <- mean(target_population$P85)
+
+# Zobrazení velikosti populace a úhrnů
+cat("Velikost cílové populace (N):", N, "\n")
+cat("Celkový počet obyvatel v roce 1975 (P75):", total_p75, "\n")
+cat("Celkový počet obyvatel v roce 1985 (P85):", total_p85, "\n")
+```
+
+## 2. Úkol 1: Odhady a intervaly spolehlivosti
+
+V této části provedeme 10% prostý náhodný výběr bez vracení z cílové populace. Následně spočítáme bodové a 99% intervalové odhady pro celkový počet obyvatel v roce 1985 (`P85`) pomocí tří metod: prostého náhodného výběru, poměrového odhadu a regresního odhadu.
+
+```{r task1}
+# Nastavení velikosti výběru (10% z N)
+n <- floor(0.1 * N)
+set.seed(123) # Pro reprodukovatelnost
+
+# Provedení prostého náhodného výběru bez vracení
+sample_indices <- sample(1:N, n, replace = FALSE)
+sample_data <- target_population[sample_indices, ]
+
+# Vytvoření objektu svydesign pro analýzu
+survey_design <- svydesign(ids = ~1, data = sample_data, fpc = ~rep(N, n))
+
+# i) Odhad pomocí prostého náhodného výběru (Horvitz-Thompson)
+srs_total_estimator <- svytotal(~P85, survey_design)
+srs_ci <- confint(srs_total_estimator, level = 0.99)
+
+# ii) Poměrový odhad
+ratio_estimator <- svyratio(numerator = ~P85, denominator = ~P75, design = survey_design)
+ratio_prediction <- predict(ratio_estimator, total = total_p75)
+# Ruční výpočet intervalu spolehlivosti pro poměrový odhad
+alpha_ci <- 0.01
+t_critical <- qt(1 - alpha_ci / 2, df = n - 1)
+predicted_total <- ratio_prediction$total
+predicted_se <- ratio_prediction$se
+ratio_ci <- c(predicted_total - t_critical * predicted_se, predicted_total + t_critical * predicted_se)
+
+# iii) Regresní odhad
+regression_model <- svyglm(P85 ~ P75, design = survey_design)
+regression_prediction <- predict(regression_model, newdata = data.frame(P75 = total_p75), total = N)
+regression_ci <- confint(regression_prediction, level = 0.99)
+
+# Výsledky
+cat("Prostý náhodný výběr - odhad úhrnu:", coef(srs_total_estimator), "\n")
+cat("99% CI:", srs_ci[1], "-", srs_ci[2], "\n")
+cat("Šířka CI:", srs_ci[2] - srs_ci[1], "\n\n")
+
+cat("Poměrový odhad - odhad úhrnu:", ratio_prediction$total, "\n")
+cat("99% CI:", as.vector(ratio_ci)[1], "-", as.vector(ratio_ci)[2], "\n")
+cat("Šířka CI:", as.vector(ratio_ci)[2] - as.vector(ratio_ci)[1], "\n\n")
+
+cat("Regresní odhad - odhad úhrnu:", coef(regression_prediction), "\n")
+cat("99% CI:", regression_ci[1], "-", regression_ci[2], "\n")
+cat("Šířka CI:", regression_ci[2] - regression_ci[1], "\n")
+
+```
+
+### Porovnání šířek intervalů spolehlivosti
+
+Z výsledků je patrné, že regresní odhad poskytuje nejužší interval spolehlivosti, následovaný poměrovým odhadem. Nejširší interval má odhad založený na prostém náhodném výběru. To je očekávaný výsledek, jelikož regresní a poměrový odhad využívají pomocnou proměnnou `P75`, která je silně korelovaná s `P85`, a tím zpřesňují odhad.
+
+## 3. Úkol 2: Stanovení rozsahu výběru
+
+Nyní vypočítáme potřebný rozsah výběru pro každou ze tří metod, abychom dosáhli požadované přesnosti `Δ`, která je stanovena na 1 % populačního průměru `P75`, s 90% spolehlivostí.
+
+```{r task2}
+# Požadovaná přesnost delta (1% z průměru P75)
+delta <- 0.01 * mean_p75
+alpha <- 0.10
+z_quantile <- qnorm(1 - alpha / 2)
+
+# Populační charakteristiky
+S2_p85 <- var(target_population$P85)
+S2_p75 <- var(target_population$P75)
+rho <- cor(target_population$P85, target_population$P75)
+
+# i) Rozsah výběru pro prostý náhodný výběr
+n0_srs <- (z_quantile^2 * S2_p85) / delta^2
+n_srs <- ceiling(n0_srs / (1 + n0_srs / N))
+
+# ii) Rozsah výběru pro regresní odhad
+# Využijeme redukce rozptylu o (1 - rho^2)
+S2_reg <- S2_p85 * (1 - rho^2)
+n0_reg <- (z_quantile^2 * S2_reg) / delta^2
+n_reg <- ceiling(n0_reg / (1 + n0_reg / N))
+
+# iii) Rozsah výběru pro poměrový odhad
+# Aproximace rozptylu je podobná jako u regresního odhadu
+# Použijeme stejný vzorec jako pro regresní odhad
+n_ratio <- n_reg
+
+# Výsledky
+cat("Požadovaná přesnost (delta):", delta, "\n\n")
+cat("Potřebný rozsah výběru pro prostý náhodný výběr:", n_srs, "\n")
+cat("Potřebný rozsah výběru pro poměrový odhad:", n_ratio, "\n")
+cat("Potřebný rozsah výběru pro regresní odhad:", n_reg, "\n")
+```
+
+### Komentář k výsledkům
+
+Jak se dalo očekávat, metody využívající pomocnou proměnnou (`poměrový` a `regresní` odhad) vyžadují podstatně menší rozsah výběru pro dosažení stejné přesnosti ve srovnání s prostým náhodným výběrem.
+
+## 4. Úkol 3: Simulace (Bonus)
+
+V bonusové části pomocí simulace ověříme, že rozptyl regresního odhadu je v praxi nižší než rozptyl odhadu úhrnu z prostého náhodného výběru. Provedeme 1000 opakování výběru a odhadu.
+
+```{r task3_bonus}
+num_simulations <- 1000
+srs_estimates <- numeric(num_simulations)
+reg_estimates <- numeric(num_simulations)
+sample_size <- n # Použijeme velikost výběru z úkolu 1
+
+set.seed(456) # Pro reprodukovatelnost
+for (i in 1:num_simulations) {
+    # Nový náhodný výběr v každé iteraci
+    sim_indices <- sample(1:N, sample_size, replace = FALSE)
+    sim_sample_data <- target_population[sim_indices, ]
+    
+    # Odhad prostým náhodným výběrem
+    srs_estimates[i] <- (N / sample_size) * sum(sim_sample_data$P85)
+    
+    # Regresní odhad
+    b_hat <- cov(sim_sample_data$P85, sim_sample_data$P75) / var(sim_sample_data$P75)
+    reg_estimates[i] <- N * (mean(sim_sample_data$P85) + b_hat * (mean_p75 - mean(sim_sample_data$P75)))
+}
+
+# Výpočet rozptylů z výsledků simulace
+var_srs <- var(srs_estimates)
+var_reg <- var(reg_estimates)
+
+# Výsledky
+cat("Rozptyl odhadu úhrnu (prostý náhodný výběr):", var_srs, "\n")
+cat("Rozptyl regresního odhadu úhrnu:", var_reg, "\n")
+cat("Poměr rozptylů (Reg / SRS):", var_reg / var_srs, "\n")
+```
+
+### Závěr simulace
+
+Simulace jasně ukazuje, že rozptyl regresního odhadu je výrazně nižší než rozptyl odhadu z prostého náhodného výběru. Tím se potvrzuje teoretický předpoklad o efektivitě regresního odhadu při existenci silně korelované pomocné proměnné.
+
+```
