@@ -9,7 +9,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
-<meta name="author" content />
+<meta name="author" content="Bártová Kateřina, Pavlík František" />
 
 
 <title>Výběrová šetření - Domácí úkol 2</title>
@@ -350,7 +350,7 @@ display: none;
 
 
 <h1 class="title toc-ignore">Výběrová šetření - Domácí úkol 2</h1>
-<h4 class="author"></h4>
+<h4 class="author">Bártová Kateřina, Pavlík František</h4>
 <h4 class="date">27. 10. 2025</h4>
 
 </div>
@@ -364,27 +364,28 @@ P_true &lt;- (3 + 0.5 * abs(DD - 16)) / 100</code></pre>
 <div id="rozsah-výběru-pro-odhad-průměru" class="section level2">
 <h2>1. Rozsah výběru pro odhad průměru</h2>
 <pre class="r"><code>mzdy_data &lt;- read.csv(&quot;Mzda.csv&quot;, header = TRUE)
-mzdy_vector &lt;- mzdy_data$Mzda
+wage_vector &lt;- mzdy_data$Mzda
 
-population_mzdy &lt;- rep(mzdy_vector, times = R)
+population_wages &lt;- rep(wage_vector, times = R)
 
-N_mzdy &lt;- length(population_mzdy)
-mean_population_mzdy &lt;- mean(population_mzdy)
-var_population_mzdy &lt;- var(population_mzdy)
-S2_mzdy &lt;- var_population_mzdy * 1 / (N_mzdy - 1)
+N_wages &lt;- length(population_wages)
+mean_population_wages &lt;- mean(population_wages)
+var_population_wages &lt;- var(population_wages)
+sigma2_wages &lt;- var_population_wages * (N_wages - 1) / N_wages
 
-cat(paste(&quot;Velikost základního souboru (N):&quot;, N_mzdy, &quot;\n&quot;))</code></pre>
+cat(&quot;Velikost základního souboru (N):&quot;, N_wages)</code></pre>
 <pre><code>## Velikost základního souboru (N): 11340</code></pre>
-<pre class="r"><code>cat(paste(&quot;Populační průměr (Y_bar):&quot;, round(mean_population_mzdy, 2), &quot;Kč\n&quot;))</code></pre>
+<pre class="r"><code>cat(&quot;Populační průměr (Y_bar):&quot;, round(mean_population_wages, 2), &quot;Kč&quot;)</code></pre>
 <pre><code>## Populační průměr (Y_bar): 20274.27 Kč</code></pre>
-<pre class="r"><code>cat(paste(&quot;Populační rozptyl (S^2):&quot;, round(S2_mzdy, 2), &quot;\n&quot;))</code></pre>
-<pre><code>## Populační rozptyl (S^2): 4868.98</code></pre>
+<pre class="r"><code>cat(&quot;Populační rozptyl (sigma^2):&quot;, round(sigma2_wages, 2))</code></pre>
+<pre><code>## Populační rozptyl (sigma^2): 55204539</code></pre>
 <div id="i-minimální-rozsah-výběru" class="section level3">
 <h3>i) Minimální rozsah výběru</h3>
-<p>Pro stanovení minimálního rozsahu výběru <code>n</code> použijeme
-vzorec pro prostý náhodný výběr bez vracení: <span class="math display">\[ n = \frac{1}{\frac{\Delta^2}{z_{1-\alpha/2}^2
-\cdot S^2} + \frac{1}{N}} \]</span> kde <code>\(\Delta\)</code> je
-požadovaná polovina šířky intervalu spolehlivosti.</p>
+<p>Pro stanovení minimálního rozsahu výběru <span class="math inline">\(n\)</span> použijeme vzorec pro prostý náhodný
+výběr bez vracení: <span class="math display">\[ n \ge
+\frac{1}{\frac{\Delta^2}{z_{1-\alpha/2}^2 \cdot \sigma^2} + \frac{1}{N}}
+\]</span> kde <span class="math inline">\(\Delta\)</span> je požadovaná
+polovina šířky intervalu spolehlivosti.</p>
 <pre class="r"><code>get_sample_size_mean &lt;- function(N, S2, delta, conf_level) {
   alpha &lt;- 1 - conf_level
   z &lt;- qnorm(1 - alpha / 2)
@@ -399,7 +400,7 @@ results_mean &lt;- data.frame()
 
 for (conf in confidence_levels) {
   for (delta in deltas_mean) {
-    n &lt;- get_sample_size_mean(N_mzdy, S2_mzdy, delta, conf)
+    n &lt;- get_sample_size_mean(N_wages, sigma2_wages, delta, conf)
     results_mean &lt;- rbind(results_mean, data.frame(
       Spolehlivost = paste0(conf * 100, &quot;%&quot;, sep=&quot;&quot;),
       Sirka_intervalu = delta * 2,
@@ -422,65 +423,64 @@ kable(results_mean, caption = &quot;Minimální rozsahy výběru pro odhad prům
 <tr class="odd">
 <td align="left">90%</td>
 <td align="right">2000</td>
-<td align="right">1</td>
+<td align="right">148</td>
 </tr>
 <tr class="even">
 <td align="left">90%</td>
 <td align="right">1500</td>
-<td align="right">1</td>
+<td align="right">260</td>
 </tr>
 <tr class="odd">
 <td align="left">90%</td>
 <td align="right">1000</td>
-<td align="right">1</td>
+<td align="right">568</td>
 </tr>
 <tr class="even">
 <td align="left">95%</td>
 <td align="right">2000</td>
-<td align="right">1</td>
+<td align="right">209</td>
 </tr>
 <tr class="odd">
 <td align="left">95%</td>
 <td align="right">1500</td>
-<td align="right">1</td>
+<td align="right">365</td>
 </tr>
 <tr class="even">
 <td align="left">95%</td>
 <td align="right">1000</td>
-<td align="right">1</td>
+<td align="right">790</td>
 </tr>
 <tr class="odd">
 <td align="left">99%</td>
 <td align="right">2000</td>
-<td align="right">1</td>
+<td align="right">355</td>
 </tr>
 <tr class="even">
 <td align="left">99%</td>
 <td align="right">1500</td>
-<td align="right">1</td>
+<td align="right">616</td>
 </tr>
 <tr class="odd">
 <td align="left">99%</td>
 <td align="right">1000</td>
-<td align="right">1</td>
+<td align="right">1298</td>
 </tr>
 </tbody>
 </table>
-<p>Maximální počet zaměstnanců, které máme k dispozici, je
-<code>100 * R = 100 * 10 = 1000</code>. Z tabulky je patrné, že s našimi
-zdroji jsme schopni dosáhnout přesnosti s šířkou intervalu 2000 Kč při
-všech úrovních spolehlivosti a přesnosti 1500 Kč při 90% a 95%
-spolehlivosti. Nejpřesnější odhad (šířka 1000 Kč) je při vyšších
-spolehlivosti 99 % již mimo naše možnosti.</p>
+<p>Maximální počet zaměstnanců, které máme k dispozici, je <span class="math inline">\(100 \cdot R = 100 \cdot 10 = 1000\)</span>. Z
+tabulky je patrné, že s našimi zdroji jsme schopni dosáhnout přesnosti s
+šířkou intervalu 2000 Kč při všech úrovních spolehlivosti a přesnosti
+1500 Kč při 90% a 95% spolehlivosti. Nejpřesnější odhad (šířka 1000 Kč)
+je při nejvyšší spolehlivosti 99 % již mimo naše možnosti.</p>
 </div>
 <div id="ii-simulace" class="section level3">
 <h3>ii) Simulace</h3>
 <p>Zvolíme si kombinaci 95% spolehlivosti a požadované šířky intervalu
-1500 Kč (<code>\(\Delta = 750\)</code> Kč). Teoretický rozsah výběru pro
-tuto kombinaci je <code>n =</code> 1.</p>
+1500 Kč (<span class="math inline">\(\Delta = 750\)</span> Kč).
+Teoretický rozsah výběru pro tuto kombinaci je <span class="math inline">\(n =\)</span> 365.</p>
 <pre class="r"><code>conf_level_sim &lt;- 0.95
 delta_sim &lt;- 750
-n_sim &lt;- get_sample_size_mean(N_mzdy, S2_mzdy, delta_sim, conf_level_sim)
+n_sim &lt;- get_sample_size_mean(N_wages, sigma2_wages, delta_sim, conf_level_sim)
 num_simulations &lt;- 1000
 
 sample_means &lt;- numeric(num_simulations)
@@ -492,12 +492,12 @@ z_sim &lt;- qnorm(1 - alpha_sim / 2)
 
 set.seed(123)
 for (i in 1:num_simulations) {
-  sample_data &lt;- sample(population_mzdy, n_sim, replace = FALSE)
+  sample_data &lt;- sample(population_wages, n_sim)
   
   sample_mean &lt;- mean(sample_data)
   sample_var &lt;- var(sample_data)
   
-  se &lt;- sqrt((1 - n_sim / N_mzdy) * sample_var / n_sim)
+  se &lt;- sqrt((1 - n_sim / N_wages) * sample_var / n_sim)
   t_val &lt;- qt(1 - alpha_sim / 2, df = n_sim - 1)
   half_width &lt;- t_val * se
   
@@ -506,24 +506,24 @@ for (i in 1:num_simulations) {
   
   sample_means[i] &lt;- sample_mean
   interval_widths[i] &lt;- 2 * half_width
-  coverage[i] &lt;- (lower_bound &lt;= mean_population_mzdy &amp;&amp; upper_bound &gt;= mean_population_mzdy)
+  coverage[i] &lt;- (lower_bound &lt;= mean_population_wages &amp; upper_bound &gt;= mean_population_wages)
 }
 
 avg_interval_width &lt;- mean(interval_widths)
 coverage_rate &lt;- mean(coverage)
 
-cat(paste(&quot;Teoretická šířka intervalu:&quot;, 2 * delta_sim, &quot;Kč\n&quot;))</code></pre>
+cat(&quot;Teoretická šířka intervalu:&quot;, 2 * delta_sim, &quot;Kč\n&quot;)</code></pre>
 <pre><code>## Teoretická šířka intervalu: 1500 Kč</code></pre>
-<pre class="r"><code>cat(paste(&quot;Průměrná šířka intervalu ze simulací:&quot;, round(avg_interval_width, 2), &quot;Kč\n&quot;))</code></pre>
-<pre><code>## Průměrná šířka intervalu ze simulací: NaN Kč</code></pre>
-<pre class="r"><code>cat(paste(&quot;Teoretická spolehlivost:&quot;, conf_level_sim * 100, &quot; %\n&quot;))</code></pre>
+<pre class="r"><code>cat(&quot;Průměrná šířka intervalu ze simulací:&quot;, round(avg_interval_width, 2), &quot;Kč\n&quot;)</code></pre>
+<pre><code>## Průměrná šířka intervalu ze simulací: 1502.57 Kč</code></pre>
+<pre class="r"><code>cat(&quot;Teoretická spolehlivost:&quot;, conf_level_sim * 100, &quot; %\n&quot;)</code></pre>
 <pre><code>## Teoretická spolehlivost: 95  %</code></pre>
-<pre class="r"><code>cat(paste(&quot;Dosažená spolehlivost (pokrytí):&quot;, coverage_rate * 100, &quot; %\n&quot;))</code></pre>
-<pre><code>## Dosažená spolehlivost (pokrytí): NA  %</code></pre>
-<p>Průměrná šířka intervalu ze simulací se velmi blíží teoretické
-požadované šířce (1500 Kč). Dosažená spolehlivost (míra pokrytí) je také
-velmi blízko teoretické 95% spolehlivosti. To potvrzuje správnost našeho
-teoretického výpočtu rozsahu výběru.</p>
+<pre class="r"><code>cat(&quot;Dosažená spolehlivost (pokrytí):&quot;, coverage_rate * 100, &quot; %\n&quot;)</code></pre>
+<pre><code>## Dosažená spolehlivost (pokrytí): 95.2  %</code></pre>
+<p>Průměrná šířka intervalů získaných simulacemi se velmi blíží
+teoretické požadované šířce (1500 Kč). Dosažená spolehlivost (míra
+pokrytí) je také velmi blízká teoretické 95% spolehlivosti. To naznačuje
+správnost našeho teoretického výpočtu rozsahu výběru.</p>
 <hr />
 </div>
 </div>
@@ -544,12 +544,12 @@ confidence_levels_prop &lt;- c(0.95, 0.99)
 deltas_prop &lt;- c(0.02, 0.01, 0.005) / 2
 
 population_levels &lt;- data.frame(
-  Uroven = c(&quot;Celostátní&quot;, &quot;Kraj (velký)&quot;, &quot;Kraj (malý)&quot;, &quot;Okresní&quot;),
+  Level = c(&quot;Celostátní&quot;, &quot;Kraj (velký)&quot;, &quot;Kraj (malý)&quot;, &quot;Okresní&quot;),
   N = c(5000000, 600000, 250000, 25000) 
 )
 
 for (i in 1:nrow(population_levels)) {
-  level_name &lt;- population_levels$Uroven[i]
+  level_name &lt;- population_levels$Level[i]
   N_prop &lt;- population_levels$N[i]
   
   results_prop &lt;- data.frame()
@@ -563,7 +563,7 @@ for (i in 1:nrow(population_levels)) {
       ))
     }
   }
-  
+
   print(kable(results_prop, caption = paste(&quot;Minimální rozsahy výběru pro&quot;, level_name, &quot;(N =&quot;, N_prop, &quot;)&quot;)))
 }</code></pre>
 <pre><code>## 
@@ -618,8 +618,9 @@ for (i in 1:nrow(population_levels)) {
 <div id="ii-simulace-1" class="section level3">
 <h3>ii) Simulace</h3>
 <p>Zvolíme si kombinaci 95% spolehlivosti a požadované šířky intervalu 1
-% (<code>\(\Delta = 0.005\)</code>) na celostátní úrovni. Skutečný podíl
-voličů je <code>P = 4 %</code>.</p>
+% (<span class="math inline">\(\Delta = 0.005\)</span>) na celostátní
+úrovni. Skutečný podíl voličů je <span class="math inline">\(P = 4
+~\%\)</span>.</p>
 <pre class="r"><code>conf_level_sim_prop &lt;- 0.95
 delta_sim_prop &lt;- 0.005
 N_sim_prop &lt;- population_levels$N[1]
@@ -635,7 +636,7 @@ alpha_sim_prop &lt;- 1 - conf_level_sim_prop
 z_sim_prop &lt;- qnorm(1 - alpha_sim_prop / 2)
 
 for (i in 1:num_simulations_prop) {
-  sample_data_prop &lt;- sample(population_prop, n_sim_prop, replace = FALSE)
+  sample_data_prop &lt;- sample(population_prop, n_sim_prop)
   
   p_hat &lt;- mean(sample_data_prop)
   
@@ -646,26 +647,25 @@ for (i in 1:num_simulations_prop) {
   upper_bound_prop &lt;- p_hat + half_width_prop
   
   interval_widths_prop[i] &lt;- 2 * half_width_prop
-  coverage_prop[i] &lt;- (lower_bound_prop &lt;= P_true &amp;&amp; upper_bound_prop &gt;= P_true)
+  coverage_prop[i] &lt;- (lower_bound_prop &lt;= P_true &amp; upper_bound_prop &gt;= P_true)
 }
 
 avg_interval_width_prop &lt;- mean(interval_widths_prop)
 coverage_rate_prop &lt;- mean(coverage_prop)
 
-cat(paste(&quot;Teoretická šířka intervalu:&quot;, 2 * delta_sim_prop * 100, &quot; %\n&quot;))</code></pre>
-<pre><code>## Teoretická šířka intervalu: 1  %</code></pre>
-<pre class="r"><code>cat(paste(&quot;Průměrná šířka intervalu ze simulací:&quot;, round(avg_interval_width_prop * 100, 3), &quot; %\n&quot;))</code></pre>
-<pre><code>## Průměrná šířka intervalu ze simulací: 0.653  %</code></pre>
-<pre class="r"><code>cat(paste(&quot;Teoretická spolehlivost:&quot;, conf_level_sim_prop * 100, &quot; %\n&quot;))</code></pre>
-<pre><code>## Teoretická spolehlivost: 95  %</code></pre>
-<pre class="r"><code>cat(paste(&quot;Dosažená spolehlivost (pokrytí):&quot;, coverage_rate_prop * 100, &quot; %\n&quot;))</code></pre>
-<pre><code>## Dosažená spolehlivost (pokrytí): 95.1  %</code></pre>
+cat(&quot;Teoretická šířka intervalu:&quot;, 2 * delta_sim_prop * 100, &quot;%&quot;)</code></pre>
+<pre><code>## Teoretická šířka intervalu: 1 %</code></pre>
+<pre class="r"><code>cat(&quot;Průměrná šířka intervalu ze simulací:&quot;, round(avg_interval_width_prop * 100, 3), &quot;%&quot;)</code></pre>
+<pre><code>## Průměrná šířka intervalu ze simulací: 0.653 %</code></pre>
+<pre class="r"><code>cat(&quot;Teoretická spolehlivost:&quot;, conf_level_sim_prop * 100, &quot;%&quot;)</code></pre>
+<pre><code>## Teoretická spolehlivost: 95 %</code></pre>
+<pre class="r"><code>cat(&quot;Dosažená spolehlivost (pokrytí):&quot;, coverage_rate_prop * 100, &quot; &quot;)</code></pre>
+<pre><code>## Dosažená spolehlivost (pokrytí): 93.2</code></pre>
 </div>
 <div id="iii-bonusová-úloha" class="section level3">
 <h3>iii) Bonusová úloha</h3>
 <p>Simulací odhadneme pravděpodobnosti správného úsudku na základě
-bodového odhadu <code>p_hat</code> při <code>n=1000</code>. Skutečný
-podíl voličů je <code>P = 4 %</code>.</p>
+bodového odhadu <span class="math inline">\(\hat{p}\)</span> při <span class="math inline">\(n=1000\)</span>. Skutečný podíl voličů je <span class="math inline">\(P = 4 ~ \%\)</span>.</p>
 <pre class="r"><code>n_bonus &lt;- 1000
 num_sim_bonus &lt;- 10000 
 p_hats &lt;- numeric(num_sim_bonus)
@@ -674,32 +674,32 @@ N_bonus &lt;- population_levels$N[1]
 population_bonus_true &lt;- rbinom(N_bonus, 1, P_true)
 
 for (i in 1:num_sim_bonus) {
-  sample_bonus &lt;- sample(population_bonus_true, n_bonus, replace = FALSE)
+  sample_bonus &lt;- sample(population_bonus_true, n_bonus)
   p_hats[i] &lt;- mean(sample_bonus)
 }
 
 # a) P(p_hat &gt;= 0.03) -&gt; narok na statni podporu
 prob_support &lt;- mean(p_hats &gt;= 0.03)
-cat(paste(&quot;a) Odhadovaná P, že hnutí získá podporu (p_hat &gt;= 3%):&quot;, round(prob_support, 4), &quot;\n&quot;))</code></pre>
-<pre><code>## a) Odhadovaná P, že hnutí získá podporu (p_hat &gt;= 3%): 0.9627</code></pre>
+cat(&quot;a) Odhadovaná P, že hnutí získá podporu (p_hat &gt;= 3%):&quot;, round(prob_support, 4), &quot;\n&quot;)</code></pre>
+<pre><code>## a) Odhadovaná P, že hnutí získá podporu (p_hat &gt;= 3%): 0.9619</code></pre>
 <pre class="r"><code># b) P(p_hat &gt;= 0.05 | P &gt;= 0.05) -&gt; dostane se do parlamentu
 #    Protoze nas skutecny podil P=0.06 je &gt;= 0.05, muzeme pouzit nasi simulaci
 prob_parliament_if_in &lt;- mean(p_hats &gt;= 0.05)
-cat(paste(&quot;b) Odhadovaná P, že správně usoudíme vstup do parlamentu (p_hat &gt;= 5% | P=6%):&quot;, round(prob_parliament_if_in, 4), &quot;\n&quot;))</code></pre>
-<pre><code>## b) Odhadovaná P, že správně usoudíme vstup do parlamentu (p_hat &gt;= 5% | P=6%): 0.0643</code></pre>
+cat(&quot;b) Odhadovaná P, že správně usoudíme vstup do parlamentu (p_hat &gt;= 5% | P=6%):&quot;, round(prob_parliament_if_in, 4), &quot;\n&quot;)</code></pre>
+<pre><code>## b) Odhadovaná P, že správně usoudíme vstup do parlamentu (p_hat &gt;= 5% | P=6%): 0.0693</code></pre>
 <pre class="r"><code># c) P(p_hat &lt; 0.05 | P &lt; 0.05) -&gt; nedostane se do parlamentu
-#    Musime provest novou simulaci s P &lt; 0.05, zvolme napr. P = 4%
+#    Musime provest novou simulaci s P &lt; 0.05, zvolime napr. P = 4%
 P_under_5 &lt;- 0.04
 population_bonus_under_5 &lt;- rbinom(N_bonus, 1, P_under_5)
 p_hats_under_5 &lt;- numeric(num_sim_bonus)
 
 for (i in 1:num_sim_bonus) {
-  sample_bonus_under_5 &lt;- sample(population_bonus_under_5, n_bonus, replace = FALSE)
+  sample_bonus_under_5 &lt;- sample(population_bonus_under_5, n_bonus)
   p_hats_under_5[i] &lt;- mean(sample_bonus_under_5)
 }
 prob_no_parliament_if_out &lt;- mean(p_hats_under_5 &lt; 0.05)
-cat(paste(&quot;c) Odhadovaná P, že správně usoudíme nevstup do parlamentu (p_hat &lt; 5% | P=4%):&quot;, round(prob_no_parliament_if_out, 4), &quot;\n&quot;))</code></pre>
-<pre><code>## c) Odhadovaná P, že správně usoudíme nevstup do parlamentu (p_hat &lt; 5% | P=4%): 0.9367</code></pre>
+cat(&quot;c) Odhadovaná P, že správně usoudíme nevstup do parlamentu (p_hat &lt; 5% | P=4%):&quot;, round(prob_no_parliament_if_out, 4), &quot;\n&quot;)</code></pre>
+<pre><code>## c) Odhadovaná P, že správně usoudíme nevstup do parlamentu (p_hat &lt; 5% | P=4%): 0.9327</code></pre>
 <hr />
 </div>
 </div>
