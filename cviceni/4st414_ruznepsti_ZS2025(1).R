@@ -6,21 +6,21 @@ rm(list = ls());
 install.packages("sampling")
 library(sampling)
 
-# Pr. 1: 2 x hazeme pravidelnou desetistennou kostkou, Y je hodnota, ktera padne na kostce
+# Pr. 1: 2 x hazeme pravidelnou desetistennou kostkou
 # a) Urcete zakladni soubor
 # b) Jedna se o vyber se stejnymi nebo ruznymi pravdepodobnostmi?
 # c) Jedna o vyber bez vraceni nebo s vracenim?
-# d) Urcete vektor pravdepodobnosti pi, ze dane cislo i padne v danem tahu
-# e) Urcete vektor pravdepodobnost phi, ze ve 2 tazich padne aspon jednou cislo i.
+# d) Urcete vektor pravdepodobnosti pi, ze dane cislo padne v i-tem tahu
+# e) Urcete vektor pravdepodobnost phi, ze ve 2 tazich padne aspon jedno cislo.
 # f) Urcete nejmensi rozsah vyber, tj. pocet hodu, aby pravdepodnost zahrnuti do vyberu dosahla aspon 0.9.
 
-# Pr. 2: 3 x hazene nepravidelnou desetistennou kostkou. Y je hodnota, ktera padne na kostce
+# Pr. 2: 3 x hazene nepravidelnou desetistennou kostkou.
 # Pravdepodobnost, ze padne i, i=1,2,...,10 je primo umerna velikosti cisla i
 # a) Urcete zakladni soubor
 # b) Jedna se o vyber se stejnymi nebo ruznymi pravdepodobnostmi?
 # c) Jedna o vyber bez vraceni nebo s vracenim?
-# d) Urcete vektor pravdepodobnosti pi, ze dane cislo i padne v danem tahu
-# e) Urcete vektor pravdepodobnost phi, ze ve 3 tazich padne aspon jednou cislo i.
+# d) Urcete vektor pravdepodobnosti pi, ze dane cislo padne v i-tem tahu
+# e) Urcete vektor pravdepodobnost phi, ze ve 2 tazich padne aspon jedno cislo.
 
 # Pr. 3: Populace U ma 100 jednotek, a to 1,2,...,99,10000
 # Urcete pravdpodonosti vyberu v danem tahu umerne velikosti pro 10% vyber.
@@ -46,7 +46,6 @@ sum(pi1)
 # Provedte je vyber s timto vyberovym planem.
 
 help(sample)
-set.seed(321)
 sample(U,n,replace=F,pi1)
 
 
@@ -173,7 +172,7 @@ HTestimator(vyb3,pik3[s3==1])
 sum(Totaltaxation)
 ## Odhad rozptylu
 ## Nestranny odhad
-varHT(vyb3,pikl3[s3==1,s3==1])
+varHT(vyb3,pikl[s3==1,s3==1])
 
 ## Devilleho metoda - staci znat jen pik, ne matici psti zahrnuti druheho radu
 varest(vyb3,pik=pik3[s3==1])
