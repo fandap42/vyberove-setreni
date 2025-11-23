@@ -112,11 +112,6 @@ ggplot(data = tab) +
   xlab("Stratum") +
   ylab("Průměrná mzda") +
   scale_colour_viridis_d()
-# kamo nevim, mozna to nechce graf, ale dat do tabulky se vzdalenostma od true prumeru
-
-# Použijte vhodné grafické metody pro srovnání.
-
-## je tabulka vhodná metoda??
 
 
 

@@ -1,0 +1,244 @@
+---
+title: "Domácí úkol 4"
+author: "Kateřina Bártová, František Pavlík"
+date: "`r format(Sys.time(), '%d. %m. %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+library(ggplot2)
+library(sampling)
+library(knitr)
+library(dplyr)
+library(viridis)
+```
+
+## Načtení dat a definice proměnných
+
+```{r load_data}
+mzdy <- read.table("Mzdy.txt", sep=",", header = TRUE)
+mzdy$vzdel <- as.factor(mzdy$vzdel)
+```
+
+
+```{r params}
+mm <- 9 
+n <- 50 + abs(mm - 6) * 10 
+N <- nrow(mzdy) 
+
+true_mean <- mean(mzdy$Mzda)
+popsize <- table(mzdy$vzdel)
+true_mean_strat <- tapply(mzdy$Mzda, mzdy$vzdel, mean)
+pop_var_strat <- tapply(mzdy$Mzda, mzdy$vzdel, var)
+pop_sd_strat <- sqrt(pop_var_strat)
+
+cat(paste("Celkový rozsah populace N =", N))
+cat(paste("\nCelkový rozsah výběru n =", n))
+```
+
+## i) Rozklad rozptylu
+
+```{r anova}
+aov_model <- aov(Mzda ~ vzdel, data = mzdy)
+aov_summary <- summary(aov_model)
+print(aov_summary)
+
+ss_between <- aov_summary[[1]]["Sum Sq"] [1, 1]
+ss_within <- aov_summary[[1]]["Sum Sq"] [2, 1]
+ss_total <- ss_between + ss_within
+
+prop_between <- ss_between / ss_total
+prop_within <- ss_within / ss_total
+
+cat(paste("\nCelkový rozptyl (Sum of Squares):", round(ss_total)))
+cat(paste("\nMeziskupinový rozptyl (vysvětlený vzděláním):", round(ss_between), "->", scales::percent(prop_between)))
+cat(paste("\nVnitroskupinový rozptyl (nevysvětlený):", round(ss_within), "->", scales::percent(prop_within)))
+```
+
+**Závěr:** Jak je vidět z analýzy, vzdělání vysvětluje přibližně `r scales::percent(prop_between)` celkové variability mezd, což je významný podíl. To naznačuje, že stratifikace podle vzdělání bude efektivní.
+
+```{r boxplot}
+ggplot(data = mzdy, aes(x = vzdel, y = Mzda, fill = vzdel)) +
+  geom_boxplot() +
+  labs(title = "Rozdělení mezd podle dosaženého vzdělání",
+       x = "Vzdělání (1:ZŠ, 2:SŠ bez mat., 3:SŠ s mat., 4:VŠ)",
+       y = "Mzda") +
+  theme_minimal()
+```
+
+## ii) Alokace výběru
+
+
+```{r alokace}
+# a) Rovnoměrná alokace (celá čísla, upravíme součet)
+base_rov <- floor(n / length(popsize))
+rov_aloc <- rep(base_rov, length(popsize))
+rov_aloc[1] <- rov_aloc[1] + (n - sum(rov_aloc))
+
+# b) Proporcionální alokace
+prop_aloc <- round(n * popsize / N)
+prop_aloc[1] <- prop_aloc[1] + (n - sum(prop_aloc))
+
+# c) Optimální (Neymanova) alokace
+numerator <- popsize * pop_sd_strat
+opt_aloc <- round(n * numerator / sum(numerator))
+opt_aloc[1] <- opt_aloc[1] + (n - sum(opt_aloc))
+
+alokace_df <- data.frame(
+  Stratum = c("1_ZS", "2_SS_bez_mat", "3_SS_s_mat", "4_VS"),
+  Velikost_populace_Nh = popsize,
+  Rovnomerna = rov_aloc,
+  Proporcionalni = prop_aloc,
+  Optimalni = opt_aloc
+)
+
+kable(alokace_df, caption = "Přehled alokací výběru")
+```
+
+## iii) a iv) Odhady průměrné mzdy a intervaly spolehlivosti
+
+```{r ci_function}
+get_strat_estimates <- function(sample_data, aloc_vector, pop_sizes, pop_means, total_N, total_n, name) {
+  
+  sample_data$vzdel <- factor(sample_data$vzdel, levels = names(pop_sizes))
+  
+  summary_stats <- sample_data %>%
+    group_by(vzdel, .drop = FALSE) %>% 
+    summarise(
+      vyb_prum = mean(Mzda, na.rm = TRUE),
+      vyb_var = var(Mzda, na.rm = TRUE)
+    ) %>%
+    arrange(vzdel) 
+
+  vyb_prum_strat <- summary_stats$vyb_prum
+  vyb_var_strat <- summary_stats$vyb_var
+  
+  vyb_prum_strat[is.na(vyb_prum_strat)] <- 0
+  vyb_var_strat[is.na(vyb_var_strat)] <- 0
+  
+  odh_prum_celkem <- sum(pop_sizes * vyb_prum_strat) / total_N
+  
+  D_Y_hat_h <- ifelse(aloc_vector > 0, (1 - aloc_vector / pop_sizes) * vyb_var_strat / aloc_vector, 0)
+  
+  D_Y_hat_celkem <- sum(pop_sizes^2 * D_Y_hat_h, na.rm = TRUE) / total_N^2
+  
+  ci_celkem_d <- odh_prum_celkem - qt(0.975, total_n - 1) * sqrt(D_Y_hat_celkem)
+  ci_celkem_h <- odh_prum_celkem + qt(0.975, total_n - 1) * sqrt(D_Y_hat_celkem)
+  
+  se_strat <- sqrt(D_Y_hat_h)
+  t_val <- ifelse(aloc_vector >= 2, qt(0.975, aloc_vector - 1), NA)
+  ci_strat_d <- vyb_prum_strat - t_val * se_strat
+  ci_strat_h <- vyb_prum_strat + t_val * se_strat
+  sirka_ci_strat <- ci_strat_h - ci_strat_d
+  
+  dostatecna_presnost <- ifelse(is.na(sirka_ci_strat), FALSE, sirka_ci_strat <= (0.10 * pop_means))
+  
+  strata_results <- data.frame(
+    Stratum = names(pop_sizes),
+    Odh_prumer = round(vyb_prum_strat),
+    Pop_prumer = round(pop_means),
+    CI_dolni = round(ci_strat_d),
+    CI_horni = round(ci_strat_h),
+    Sirka_CI = round(sirka_ci_strat),
+    Presnost_OK = dostatecna_presnost
+  )
+  
+  list(
+    name = name,
+    overall_ci = c(ci_celkem_d, ci_celkem_h),
+    overall_ci_width = ci_celkem_h - ci_celkem_d,
+    strata_results_table = strata_results
+  )
+}
+```
+
+### 1. Prostý náhodný výběr (PNV)
+
+```{r pnv}
+set.seed(123) 
+pnv_sample <- mzdy[sample(1:N, n), ]
+
+odh_prum_pnv <- mean(pnv_sample$Mzda)
+odh_var_pnv <- (1 - n / N) * var(pnv_sample$Mzda) / n
+ci_pnv_d <- odh_prum_pnv - qt(0.975, n - 1) * sqrt(odh_var_pnv)
+ci_pnv_h <- odh_prum_pnv + qt(0.975, n - 1) * sqrt(odh_var_pnv)
+sirka_pnv <- ci_pnv_h - ci_pnv_d
+```
+
+### 2. Stratifikovaný výběr
+
+```{r strat_sampling}
+set.seed(123) 
+# Výběry
+r_strata <- strata(mzdy, stratanames = c("vzdel"), size = rov_aloc, method = "srswor")
+r_sample <- getdata(mzdy, r_strata)
+
+p_strata <- strata(mzdy, stratanames = c("vzdel"), size = prop_aloc, method = "srswor")
+p_sample <- getdata(mzdy, p_strata)
+
+o_strata <- strata(mzdy, stratanames = c("vzdel"), size = opt_aloc, method = "srswor")
+o_sample <- getdata(mzdy, o_strata)
+
+# Výpočty
+results_rov <- get_strat_estimates(r_sample, rov_aloc, popsize, true_mean_strat, N, n, "Rovnoměrná")
+results_prop <- get_strat_estimates(p_sample, prop_aloc, popsize, true_mean_strat, N, n, "Proporcionální")
+results_opt <- get_strat_estimates(o_sample, opt_aloc, popsize, true_mean_strat, N, n, "Optimální")
+
+all_results <- list(results_rov, results_prop, results_opt)
+```
+
+### Porovnání přesnosti výběrových plánů
+
+
+```{r compare_overall}
+comparison_df <- data.frame(
+  Metoda = c("PNV", results_rov$name, results_prop$name, results_opt$name),
+  Srika_CI = c(sirka_pnv, results_rov$overall_ci_width, results_prop$overall_ci_width, results_opt$overall_ci_width)
+)
+
+kable(comparison_df, caption = "Srovnání šířky CI pro odhad celkové průměrné mzdy", digits = 2)
+```
+
+**Závěr k přesnosti odhadu celkového průměru:**
+*   **Povede využití stratifikovaného výběru k zvýšení přesnosti?** Ano, všechny tři metody stratifikovaného výběru vedou k užšímu intervalu spolehlivosti (vyšší přesnosti) než prostý náhodný výběr.
+*   **Tratíme hodně na přesnosti, když použijeme proporcionální alokaci místo optimální?** Rozdíl v přesnosti mezi optimální a proporcionální alokací je v tomto případě malý. Optimální alokace je sice teoreticky nejpřesnější, ale proporcionální je často jednodušší na implementaci a poskytuje velmi podobné výsledky, pokud se rozptyly ve stratech příliš neliší.
+
+### Přesnost odhadů v jednotlivých stratech
+
+```{r compare_strata, results='asis'}
+for (res in all_results) {
+  print(kable(res$strata_results_table, caption = paste("Výsledky pro jednotlivá strata:", res$name)))
+}
+```
+
+**Závěr k přesnosti odhadů ve stratech:**
+*   **Která z alokací je nejvhodnější pro co nejkvalitnější odhady průměrných mezd jednotlivých skupin?**
+    *   **Rovnoměrná alokace** poskytuje nejpřesnější odhady pro menšinová strata (zde ZŠ a VŠ), protože jim přiděluje relativně více jednotek, než by odpovídalo jejich zastoupení v populaci. Pro stratum ZŠ jako jedinná splňuje 10% pravidlo přesnosti.
+    *   **Proporcionální a optimální alokace** se zaměřují na co nejpřesnější odhad celkového průměru. To vede k tomu, že menší strata mají málo pozorování a odhady pro ně jsou velmi nepřesné (široké CI).
+    *   Pokud je tedy hlavním cílem srovnání mezi skupinami nebo přesné odhady pro každou skupinu, je **rovnoměrná alokace** nejlepší volbou. Pokud je hlavním cílem co nejpřesnější odhad celkového průměru, je vhodnější **optimální** nebo **proporcionální** alokace.
+
+## Grafické srovnání odhadů
+
+Na závěr vizualizujeme, jak se odhady průměrů z jednotlivých alokací blíží skutečným populačním průměrům ve stratech.
+
+```{r final_plot}
+# Příprava dat pro graf
+plot_data <- bind_rows(
+  results_rov$strata_results_table %>% mutate(Alokace = results_rov$name),
+  results_prop$strata_results_table %>% mutate(Alokace = results_prop$name),
+  results_opt$strata_results_table %>% mutate(Alokace = results_opt$name)
+)
+
+ggplot(plot_data, aes(x = Stratum)) +
+  geom_point(aes(y = Odh_prumer, color = Alokace), size = 4, position = position_dodge(width = 0.5)) +
+  geom_point(aes(y = Pop_prumer, shape = "Populační průměr"), color = "black", size = 4) +
+  scale_shape_manual(name = "", values = c("Populační průměr" = 4)) +
+  scale_color_viridis_d(name = "Typ alokace") +
+  labs(title = "Srovnání odhadnutých a skutečných průměrů ve stratech",
+       x = "Stratum (Vzdělání)",
+       y = "Průměrná mzda") +
+  theme_minimal() +
+  guides(color = guide_legend(order = 1), shape = guide_legend(order = 2))
+
+```
