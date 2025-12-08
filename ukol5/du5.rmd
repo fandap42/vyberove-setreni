@@ -1,7 +1,237 @@
 ---
-title: "Domácí úkol 4"
+title: "Domácí úkol 5"
 author: "Kateřina Bártová, František Pavlík"
 date: "`r format(Sys.time(), '%d. %m. %Y')`"
 output: html_document
 ---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+
+# Load data here to make it available for inline R code
+student_data <- read.csv("testyDU5.csv")
+```
+
+V tomto úkolu budeme analyzovat různé strategie výběru pro odhad průměrného počtu bodů z testu. Data obsahují `r nrow(student_data)` studentů, `r length(unique(student_data$id_cv))` cvičení a `r length(unique(student_data$typ))` typy oborů.
+
+### Načtení dat a příprava
+
+Nejprve načteme potřebné knihovny a data. Dále připravíme základní parametry a přehled o datech.
+
+```{r data_preparation}
+# Please replace the seed with your birth date in RRRRMMEE format
+set.seed(20001208) 
+
+library(dplyr)
+library(ggplot2)
+library(sampling)
+
+# The data is already loaded in the setup chunk
+student_data$typ <- as.factor(student_data$typ)
+
+# Population parameters
+N <- nrow(student_data)
+n <- N / 10
+
+# Population mean and variance
+true_mean <- mean(student_data$body)
+true_var <- var(student_data$body)
+true_sd <- sd(student_data$body)
+
+# Number of clusters (exercises)
+M <- length(unique(student_data$id_cv))
+m_c <- M / 10 # for option c
+m_d <- M / 5  # for option d
+```
+
+Skutečný průměrný počet bodů v celé populaci je `r round(true_mean, 2)` s rozptylem `r round(true_var, 2)`.
+
+### i) a ii) Teoretická analýza výběrových plánů
+
+Pro všechny čtyři možnosti uvedeme, zda je bodový odhad nestranný, a spočteme teoretickou směrodatnou odchylku odhadu průměru.
+
+Všechny navržené plány (prostý náhodný výběr, stratifikovaný výběr, skupinkový výběr a dvoustupňový výběr) poskytují při správném použití nestranný odhad populačního průměru.
+
+#### a) Prostý náhodný výběr (SRS) 160 studentů
+
+Při prostém náhodném výběru bez vracení (SRSWOR) je odhad průměru nestranný.
+
+```{r theo_a}
+# Theoretical variance for SRSWOR
+var_a <- (1 - n / N) * true_var / n
+sd_a <- sqrt(var_a)
+```
+Teoretická směrodatná odchylka odhadu průměru je `r round(sd_a, 4)`.
+
+#### b) Stratifikovaný výběr
+
+Vybíráme 1/10 studentů z každého typu cvičení. Jedná se o stratifikovaný výběr s proporcionální alokací. Odhad průměru je nestranný.
+
+```{r theo_b}
+# Stratified sampling
+strata_summary <- student_data %>%
+  group_by(typ) %>%
+  summarise(
+    N_h = n(),
+    S2_h = var(body)
+  ) %>%
+  mutate(W_h = N_h / N)
+
+# Proportional allocation: n_h = n * W_h
+strata_summary$n_h <- n * strata_summary$W_h
+
+# Theoretical variance for stratified sampling
+var_b <- sum((1 - strata_summary$n_h / strata_summary$N_h) * strata_summary$W_h^2 * strata_summary$S2_h / strata_summary$n_h)
+sd_b <- sqrt(var_b)
+```
+Teoretická směrodatná odchylka odhadu průměru je `r round(sd_b, 4)`.
+
+#### c) Skupinkový výběr
+
+Vybíráme 1/10 cvičení (8 cvičení) a opravíme všechny testy v nich. Odhad průměru je nestranný.
+
+```{r theo_c}
+# Cluster sampling
+cluster_means <- student_data %>%
+  group_by(id_cv) %>%
+  summarise(cluster_total = sum(body),
+            cluster_mean = mean(body))
+
+# Between-cluster variance
+S2_b <- var(cluster_means$cluster_mean)
+
+# Theoretical variance for cluster sampling of equal size clusters
+var_c <- (1 - m_c / M) * S2_b / m_c
+sd_c <- sqrt(var_c)
+
+# Intraclass correlation coefficient (ICC)
+students_per_cluster <- N / M
+S2_w <- student_data %>%
+  group_by(id_cv) %>%
+  summarise(var_in_cluster = var(body)) %>%
+  pull(var_in_cluster) %>%
+  mean(na.rm = TRUE)
+
+icc <- (S2_b - S2_w / students_per_cluster) / (S2_b + (students_per_cluster - 1) * S2_w / students_per_cluster)
+```
+Teoretická směrodatná odchylka odhadu průměru je `r round(sd_c, 4)`. Vnitrotřídní korelační koeficient (ICC) je `r round(icc, 4)`. Kladná hodnota ICC naznačuje, že studenti v rámci jednoho cvičení si jsou podobnější než studenti napříč cvičeními, což snižuje efektivitu skupinkového výběru.
+
+#### d) Dvoustupňový výběr
+
+Vybíráme 1/5 cvičení (16 cvičení) a v každém z nich 1/2 studentů (10 studentů). Odhad průměru je nestranný.
+
+```{r theo_d}
+# Two-stage cluster sampling
+n2 <- 10 # students per cluster
+var_d <- (1 - m_d / M) * S2_b / m_d + (1 - n2 / students_per_cluster) * S2_w / (m_d * n2)
+sd_d <- sqrt(var_d)
+```
+Teoretická směrodatná odchylka odhadu průměru je `r round(sd_d, 4)`.
+
+#### Závěr k teoretické části
+Pokud předpokládáme, že studenti v rámci cvičení jsou si podobní (kladné ICC), pak skupinkový a vícestupňový výběr nejsou ideální. Jejich variabilita je vyšší než u prostého náhodného výběru. Stratifikovaný výběr se zdá být nejpřesnější, protože bere v potaz rozdíly mezi typy oborů.
+
+| Metoda                     | Teoretická směrodatná odchylka |
+|----------------------------|--------------------------------|
+| a) Prostý náhodný výběr    | `r round(sd_a, 4)`             |
+| b) Stratifikovaný výběr    | `r round(sd_b, 4)`             |
+| c) Skupinkový výběr        | `r round(sd_c, 4)`             |
+| d) Dvoustupňový výběr      | `r round(sd_d, 4)`             |
+
+### iii) Simulační studie
+
+Provedeme simulaci všech 4 možností pro R=500 replikací a porovnáme jejich přesnost.
+
+```{r simulation}
+R <- 500
+results <- data.frame(
+  replication = 1:R,
+  srs_mean = numeric(R),
+  strat_mean = numeric(R),
+  cluster_mean = numeric(R),
+  twostage_mean = numeric(R)
+)
+
+# Allocation for stratified sampling
+allocation <- table(student_data$typ) / 10
+
+for (i in 1:R) {
+  # a) SRS
+  srs_sample_ids <- sample(1:N, size = n, replace = FALSE)
+  srs_sample <- student_data[srs_sample_ids, ]
+  results$srs_mean[i] <- mean(srs_sample$body)
+  
+  # b) Stratified
+  strat_sample_ids <- strata(student_data, stratanames = "typ", size = allocation, method = "srswor")$ID_unit
+  strat_sample <- student_data[strat_sample_ids, ]
+  results$strat_mean[i] <- mean(strat_sample$body)
+
+  # c) Cluster
+  cluster_ids <- sample(1:M, size = m_c, replace = FALSE)
+  cluster_sample <- student_data[student_data$id_cv %in% cluster_ids, ]
+  results$cluster_mean[i] <- mean(cluster_sample$body)
+
+  # d) Two-stage
+  stage1_ids <- sample(1:M, size = m_d, replace = FALSE)
+  stage1_sample <- student_data[student_data$id_cv %in% stage1_ids, ]
+  
+  twostage_sample <- stage1_sample %>%
+    group_by(id_cv) %>%
+    sample_n(size = n2, replace = FALSE)
+  results$twostage_mean[i] <- mean(twostage_sample$body)
+}
+
+# Reshape data for plotting
+results_long <- tidyr::gather(results, key = "method", value = "mean_estimate", -replication)
+results_long$method <- factor(results_long$method, 
+                              levels = c("srs_mean", "strat_mean", "cluster_mean", "twostage_mean"),
+                              labels = c("a) SRS", "b) Stratified", "c) Cluster", "d) Two-stage"))
+```
+
+#### Grafické porovnání přesnosti
+
+Nyní porovnáme distribuce odhadů průměrů z jednotlivých metod pomocí krabicového grafu.
+
+```{r plot, fig.width=10, fig.height=6}
+ggplot(results_long, aes(x = method, y = mean_estimate, fill = method)) +
+  geom_boxplot() +
+  geom_hline(yintercept = true_mean, linetype = "dashed", color = "red", size = 1) +
+  labs(
+    title = "Porovnání přesnosti odhadů průměru pro různé výběrové plány",
+    subtitle = paste("R = 500 replikací, skutečný průměr =", round(true_mean, 2)),
+    x = "Metoda výběru",
+    y = "Odhad průměrného počtu bodů"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+Graf ukazuje, že všechny metody poskytují nestranné odhady (centra krabic jsou blízko červené čáry). Stratifikovaný výběr má viditelně nejmenší rozptyl, což potvrzuje teoretické výpočty. Naopak skupinkový výběr má největší rozptyl.
+
+#### Empirické směrodatné odchylky
+
+Spočteme směrodatné odchylky odhadů ze simulace a porovnáme je s teoretickými hodnotami.
+
+```{r empirical_sd}
+empirical_sds <- results_long %>%
+  group_by(method) %>%
+  summarise(empirical_sd = sd(mean_estimate))
+
+theoretical_sds <- data.frame(
+  method = factor(c("a) SRS", "b) Stratified", "c) Cluster", "d) Two-stage")),
+  theoretical_sd = c(sd_a, sd_b, sd_c, sd_d)
+)
+
+comparison_df <- left_join(empirical_sds, theoretical_sds, by = "method")
+
+knitr::kable(comparison_df, 
+             caption = "Porovnání teoretických a empirických směrodatných odchylek",
+             col.names = c("Metoda", "Empirická SD", "Teoretická SD"),
+             digits = 4)
+```
+
+Empirické výsledky ze simulace velmi dobře odpovídají teoretickým výpočtům.
+
+### Závěr
+
+Na základě teoretické analýzy i simulační studie je pro daný úkol nejvhodnější **stratifikovaný výběr s proporcionální alokací (varianta b)**. Poskytuje nejpřesnější (nejmenší směrodatnou odchylku) nestranný odhad průměrného počtu bodů. Skupinkový výběr je nejméně vhodný kvůli podobnosti studentů v rámci cvičení (kladné ICC).
