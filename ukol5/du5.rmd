@@ -1,0 +1,7 @@
+---
+title: "Domácí úkol 4"
+author: "Kateřina Bártová, František Pavlík"
+date: "`r format(Sys.time(), '%d. %m. %Y')`"
+output: html_document
+---
+
