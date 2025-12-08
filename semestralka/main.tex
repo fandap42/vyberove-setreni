@@ -13,7 +13,7 @@
 \parindent=0pt
 \parskip=11pt
 
-\def\NazevPrace{Využití Taylorova rozvoje ve výběrových šetřeních}
+\def\NazevPrace{Využití Taylorova rozvoje (linearizace) pro odhad rozptylu výběrového kvantilu}
 \def\TypPrace{SEMESTRÁLNÍ PRÁCE}
 \def\Autor{František Pavlík}
 \def\xname{pavf05}
@@ -26,9 +26,30 @@
 
 \import{template/}{titulka}
 
+\chapter*{Úvod}
+\addcontentsline{toc}{chapter}{Úvod}
+\input{kapitoly/01_uvod}
+
+\chapter{Teoretická část}
+\input{kapitoly/02_teorie}
+
+\chapter{Metodika a Data}
+\input{kapitoly/03_metodika}
+
+\chapter{Výsledky}
+\input{kapitoly/04_vysledky}
+
+\chapter*{Závěr}
+\addcontentsline{toc}{chapter}{Závěr}
+\input{kapitoly/05_zaver}
+
 \begin{abstract}
-    \noindent Práce se zabývá aplikací Taylorova rozvoje v teorii výběrových šetření, konkrétně jako nástroje pro odhad rozptylu nelineárních statistik. V kontextu komplexních výběrových plánů, které zahrnují stratifikaci a shlukový výběr, je standardní výpočet rozptylu pro statistiky jako poměry či regresní koeficienty netriviální. Práce představuje teoretický základ a odvození metody Taylorovy linearizace (známé též jako metoda delta). Tento přístup aproximuje nelineární funkci odhadů pomocí její lineární aproximace prvního řádu. Tím je problém odhadu rozptylu složité statistiky transformován na výpočetně zvládnutelný problém odhadu rozptylu lineárního odhadu (úhrnu), pro který existují zavedené postupy. Práce se věnuje detailnímu odvození metody pro poměrové a regresní odhady a její implementace ve statistických sofwarech.
+    \noindent Práce se zabývá problematikou odhadu rozptylu výběrových kvantilů, což je nelineární statistika, u které nelze použít standardní vzorce pro výběrový průměr. Představena je metoda Taylorovy linearizace ve formě Woodruffovy metody intervalové inverze, která umožňuje obejít nutnost přímého odhadu hustoty pravděpodobnosti. Teoretické poznatky jsou ověřeny v simulační studii na log-normálním rozdělení, která zkoumá vliv šikmosti rozdělení na pokrytí intervalů spolehlivosti. Výsledky ukazují, že zatímco pro medián je metoda robustní i při menších rozsazích výběru, pro krajní kvantily u sešikmených dat vyžaduje značně větší výběrové soubory k dosažení asymptotických vlastností.
     
+    \vspace{1em}
+    \noindent \textbf{Klíčová slova:} Výběrový kvantil, Taylorova linearizace, Woodruffova metoda, Log-normální rozdělení, Simulace.
+    
+    \noindent \textbf{JEL Classification:} C10, C42, C83.
 \end{abstract}
 
 \newpage

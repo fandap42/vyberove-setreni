@@ -1,0 +1,15 @@
+Odhad populačního průměru a úhrnu je standardním úlohou výběrových šetření, pro kterou existují dobře definované a jednoduché vzorce pro rozptyl, jako je známé $S^2/n$ v případě prostého náhodného výběru. Statistiky, které zajímají moderní analytiky a ekonomy, však často přesahují rámec prostých průměrů. Příkladem jsou kvantily, jako je medián nebo decily, které (na rozdíl od průměru) nabízejí robustnější pohled na rozdělení příjmů či majetku, jež bývají typicky sešikmená.
+
+Zatímco bodový odhad výběrového kvantilu je přímočarý (stačí seřadit data a vybrat příslušnou hodnotu), nalezení jeho rozptylu, potažmo sestrojení intervalu spolehlivosti, je podstatně složitější problém. Výběrový kvantil není lineární funkcí pozorování, a proto nelze použít standardní vzorce pro rozptyl lineárních kombinací.
+
+\section*{Definice problému}
+Teoretický rozptyl výběrového kvantilu závisí na hodnotě hustoty pravděpodobnosti populace v bodě daného kvantilu, $f(Q_p)$. Tato hodnota je však v praxi neznámá. Přímý odhad hustoty (např. pomocí jádrového vyhlazování) je numericky nestabilní a závisí na volbě "tuning parameters" (šířka vyhlazovacího okna), což vnáší do odhadu rozptylu dodatečnou nejistotu a subjektivitu.
+
+\section*{Cíle práce}
+Cílem této práce je demonstrovat využití **Taylorovy linearizace (metody delta)** pro odhad rozptylu výběrového kvantilu, aniž by bylo nutné explicitně odhadovat hustotu $f(Q_p)$. Práce se zaměří na **Woodruffovu metodu** (Woodruff, 1952), která využívá inverzi intervalu spolehlivosti pro proporci.
+
+Tato metoda bude podrobena simulační studii za účelem ověření její funkčnosti a robustnosti. Hlavní výzkumnou otázkou je:
+\begin{itemize}
+    \item Jak ovlivňuje šikmost rozdělení (reprezentovaná log-normálním modelem) pokrytí (coverage probability) 95\% intervalů spolehlivosti pro kvantily sestrojené pomocí Woodruffovy metody?
+    \item Dostatečně "funguje" asymptotická teorie i pro malé a střední rozsahy výběru ($n=200$ až $2000$) u extrémnějších kvantilů (např. 90. percentil)?
+\end{itemize}

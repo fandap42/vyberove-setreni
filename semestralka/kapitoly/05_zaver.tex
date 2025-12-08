@@ -1,0 +1,10 @@
+Tato práce se zabývala aplikací Taylorovy linearizace ve formě Woodruffovy metody pro odhad rozptylu výběrových kvantilů. Hlavním přínosem práce je propojení teoretického aparátu (Bahadurův vztah, asymptotická normalita) s praktickou simulační studií na datech s log-normálním rozdělením.
+
+\section*{Shrnutí zjištění}
+\begin{itemize}
+    \item **Robustnost metody:** Woodruffova metoda se ukázala jako překvapivě robustní. I v případech, kdy byl odhad rozptylu zkreslený (bias > 50 \% u malých výběrů v chvostu rozdělení), intervaly spolehlivosti si zachovávaly požadované pokrytí cca 95 \%. To z ní činí bezpečný nástroj pro praktické použití.
+    \item **Vliv šikmosti:** Šikmost rozdělení má zásadní vliv na efektivitu odhadu. V oblastech s nízkou hustotou pravděpodobnosti (chvosty) roste rozptyl kvantilu dramaticky, což klade vysoké nároky na rozsah výběru.
+    \item **Doporučení:** Pro praxi výběrových šetření lze Woodruffovu metodu doporučit jako standard. Při práci se silně sešikmenými daty (příjmy, aktiva) je však nutné počítat s tím, že pro přesný odhad extrémních kvantilů (např. 99. percentil) jsou nutné řádově tisícové rozsahy výběru, jinak budou intervaly spolehlivosti velmi široké.
+\end{itemize}
+
+Práce splnila své zadání demonstrovat nelineární metody odhadu ve statistice a potvrdila, že pro kvantilové charakteristiky nelze spoléhat na intuici vybudovanou na chování výběrových průměrů.

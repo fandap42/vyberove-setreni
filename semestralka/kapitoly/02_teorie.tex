@@ -1,0 +1,49 @@
+\section{Výběrový kvantil a jeho asymptotické vlastnosti}
+
+Nechť $F(y)$ je distribuční funkce náhodné veličiny $Y$. Populační kvantil řádu $p$, kde $p \in (0, 1)$, značíme $Q_p$ a definujeme jako:
+\begin{equation}
+Q_p = F^{-1}(p) = \inf \{ y : F(y) \ge p \}
+\end{equation}
+Výběrový kvantil $\hat{Q}_p$ z prostého náhodného výběru o rozsahu $n$ je definován jako inverzní funkce k empirické distribuční funkci $\hat{F}_n(y)$.
+
+Klíčovým poznatkem pro statistickou inferenci je asymptotická normalita výběrového kvantilu. Podle Bahadurovy reprezentace pro $n \to \infty$ platí:
+\begin{equation}
+\sqrt{n}(\hat{Q}_p - Q_p) \xrightarrow{d} N\left( 0, \frac{p(1-p)}{[f(Q_p)]^2} \right)
+\end{equation}
+Z tohoto vztahu vyplývá asymptotický rozptyl:
+\begin{equation}
+D(\hat{Q}_p) \approx \frac{p(1-p)}{n [f(Q_p)]^2}
+\end{equation}
+Zde je jasně patrný problém závislosti na $1/f(Q_p)$. Pokud je hustota v bodě kvantilu malá (chvosty rozdělení), rozptyl je velký.
+
+\section{Taylorova linearizace}
+
+Linearizace je obecná technika pro aproximaci rozptylu nelineární statistiky $g(X)$. Rozvojem Taylorovy řady prvního řádu kolem střední hodnoty $\mu$ dostáváme $g(X) \approx g(\mu) + g'(\mu)(X-\mu)$. Aplikací operátoru rozptylu: $D(g(X)) \approx [g'(\mu)]^2 D(X)$.
+
+V případě kvantilu narážíme na problém, že $\hat{Q}_p$ není jednoduchá funkce průměrů. Můžeme však linearizovat vztah mezi kvantilem a distribuční funkcí. Vyjdeme z rovnosti $\hat{F}(\hat{Q}_p) \approx p$. Taylorův rozvoj funkce $\hat{F}$ v bodě $\hat{Q}_p$ kolem $Q_p$ dává:
+\begin{equation}
+\hat{F}(\hat{Q}_p) \approx \hat{F}(Q_p) + (\hat{Q}_p - Q_p) f(Q_p)
+\end{equation}
+Odtud vyjádříme chybu odhadu:
+\begin{equation}
+(\hat{Q}_p - Q_p) \approx \frac{p - \hat{F}(Q_p)}{f(Q_p)}
+\end{equation}
+Tento vztah převádí "vodorovnou" odchylku kvantilů na "svislou" odchylku distribuční funkce, škálovanou sklonem tečny (hustotou).
+
+\section{Woodruffova metoda}
+
+Woodruff (1952) navrhl elegantní metodu, která využívá výše uvedený princip linearizace, ale obchází nutnost znát $f(Q_p)$.
+
+Postup sestává z následuících kroků:
+\begin{enumerate}
+    \item Sestrojíme interval spolehlivosti pro očekávanou hodnotu distribuční funkce, tedy pro $p$. Pro hladinu významnosti $\alpha$:
+    \begin{equation}
+    p_L = p - u_{1-\alpha/2} \sqrt{\frac{p(1-p)}{n}}, \quad p_U = p + u_{1-\alpha/2} \sqrt{\frac{p(1-p)}{n}}
+    \end{equation}
+    \item Najdeme výběrové kvantily odpovídající těmto mezním pravděpodobnostem. Získáme tak interval $[ \hat{Q}_{p_L}, \hat{Q}_{p_U} ]$. Tento interval je $100(1-\alpha)\%$ intervalem spolehlivosti pro $Q_p$.
+    \item Pokud potřebujeme odhad směrodatné odchylky (Standard Error), odvodíme ji z délky intervalu (za předpokladu normality):
+    \begin{equation}
+    \hat{SE}(\hat{Q}_p) = \frac{\hat{Q}_{p_U} - \hat{Q}_{p_L}}{2 u_{1-\alpha/2}}
+    \end{equation}
+\end{enumerate}
+Tato metoda implicitně "odhaduje" převrácenou hodnotu hustoty pomocí šířky intervalu mezi kvantily, což je mnohem stabilnější než odhad hustoty v jednom bodě.

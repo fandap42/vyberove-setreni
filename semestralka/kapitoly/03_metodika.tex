@@ -1,0 +1,31 @@
+\section{Design simulační studie}
+Pro ověření vlastností Woodruffovy metody byla provedena Monte Carlo simulace v prostředí R. Cílem simulace je zjistit, jak přesně metoda odhaduje rozptyl a zda sestrojené intervaly spolehlivosti skutečně pokrývají populační parametr s deklarovanou pravděpodobností 95 \%.
+
+\subsection{Populace a generování dat}
+Jako model pro generování dat bylo pro svou relevanci v ekonomických aplikacích (příjmová rozdělení) zvoleno **Log-normální rozdělení** $LN(\mu, \sigma)$.
+Byl fixován parametr polohy $\mu = 0$ (v logaritmické škále).
+Parametr tvaru $\sigma$ nabýval hodnot $\{0.5, 1.0, 1.5\}$.
+\begin{itemize}
+    \item $\sigma=0.5$: Mírná šikmost, blízké normálnímu rozdělení.
+    \item $\sigma=1.5$: Extrémní šikmost a těžké chvosty.
+\end{itemize}
+
+\subsection{Sledované parametry}
+Zajímáme se o odhad dvou kvantilů:
+\begin{itemize}
+    \item \textbf{Medián ($p=0.5$)}: Robustní míra polohy.
+    \item \textbf{90. percentil ($p=0.9$)}: Chvostový kvantil, kde je hustota pravděpodobnosti nízká.
+\end{itemize}
+Simulace byla provedena pro rozsahy výběru $n \in \{200, 500, 1000, 2000\}$. Počet replikací byl nastaven na $R=1000$.
+
+\section{Metodika stanovení rozsahu výběru}
+Součástí analýzy je teoretický výpočet potřebného rozsahu výběru $n$ pro dosažení požadované přesnosti $\Delta$. Vycházíme z požadavku, aby poloviční šířka intervalu spolehlivosti nepřesáhla $\Delta$.
+Z asymptotického rozptylu (3.3) plyne:
+\begin{equation}
+n \ge \frac{u_{1-\alpha/2}^2 p(1-p)}{\Delta^2 [f(Q_p)]^2}
+\end{equation}
+Pro log-normální rozdělení je hustota dána vzorcem:
+\begin{equation}
+f(x) = \frac{1}{x\sigma\sqrt{2\pi}} e^{-\frac{(\ln x - \mu)^2}{2\sigma^2}}
+\end{equation}
+Tento vzorec ukazuje, že s rostoucím $x$ (v chvostu u $\sigma=1.5$) hustota $f(x)$ rychle klesá k nule. Protože $f(Q_p)$ je ve jmenovateli vzorce pro $n$, potřebný rozsah výběru roste s druhou mocninou převrácené hodnoty hustoty. To má dramatické důsledky pro plánování šetření zaměřených na extrémní kvantily.
