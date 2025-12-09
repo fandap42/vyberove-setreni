@@ -66,7 +66,7 @@ Teoretická směrodatná odchylka odhadu průměru je `r round(sd_b, 4)`.
 
 #### c) 
 
-Vybíráme 1/10 cvičení (8 cvičení) a opravíme všechny testy v nich. Odhad průměru je nestranný.
+Vybíráme 1/10 cvičení (8 cvičení) a opravíme všechny testy v nich. Jde o skupinkový výběr a odhad průměru je nestranný.
 
 ```{r theo_c}
 cluster_means <- student_data %>%
@@ -92,7 +92,7 @@ Teoretická směrodatná odchylka odhadu průměru je `r round(sd_c, 4)`. Vnitro
 
 #### d) 
 
-Vybíráme 1/5 cvičení (16 cvičení) a v každém z nich 1/2 studentů (10 studentů). Odhad průměru je nestranný.
+Vybíráme 1/5 cvičení (16 cvičení) a v každém z nich 1/2 studentů (10 studentů) - jde o dvoustupňový výběr. Odhad průměru je nestranný.
 
 ```{r theo_d}
 n2 <- 10 
