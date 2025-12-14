@@ -11,7 +11,6 @@ warnings.filterwarnings('ignore')
 
 np.random.seed(42)
 
-# Nastavení grafů
 try:
     plt.style.use('seaborn-v0_8-whitegrid')
 except:
@@ -23,15 +22,13 @@ plt.rcParams['axes.titlesize'] = 13
 plt.rcParams['axes.labelsize'] = 12
 
 def lognormal_pdf(x, mu, sigma):
-    if np.any(x <= 0):
-        return np.where(x > 0, 
-                       (1 / (x * sigma * np.sqrt(2 * np.pi))) * np.exp(-((np.log(x) - mu)**2) / (2 * sigma**2)),
-                       0)
-    return (1 / (x * sigma * np.sqrt(2 * np.pi))) * np.exp(-((np.log(x) - mu)**2) / (2 * sigma**2))
+    scale = np.exp(mu)
+    return lognorm.pdf(x, s=sigma, scale=scale)
 
 
 def lognormal_quantile(p, mu, sigma):
-    return np.exp(mu + sigma * norm.ppf(p))
+    scale = np.exp(mu)
+    return lognorm.ppf(p, s=sigma, scale=scale)
 
 
 def theoretical_variance_taylor(p, mu, sigma, n):
