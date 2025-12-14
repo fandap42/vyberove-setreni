@@ -18,11 +18,21 @@ Obrázek \ref{fig:coverage} zobrazuje pravděpodobnost pokrytí intervalů. Pře
     \label{fig:coverage}
 \end{figure}
 
-Výsledky ukazují:
+Výsledky ukazují zřetelný rozdíl v chování metod v závislosti na parametrech simulace:
 \begin{enumerate}
-    \item \textbf{Oracle metoda (zelená)} konzistentně dosahuje nominálního pokrytí, což validuje teoretický rámec.
-    \item \textbf{Plug-in metoda (modrá)} selhává pro extrémní kvantil $p=0.99$ a vysokou asymetrii $\sigma=1.5$. Coverage zde klesá výrazně pod požadovaných 0.99. Příčinou je podhodnocení rozptylu způsobené jádrovým vyhlazováním.
-    \item \textbf{Bootstrap (červená)} v podmínkách silné asymetrie ($\sigma=1.5$) překonává Plug-in metodu, ale pro malé rozsahy výběru ($n=30$) rovněž nedosahuje cílové hladiny 0.99, což je způsobeno malým počtem pozorování v chvostu.
+    \item \textbf{Oracle metoda (zelená)}: Tato referenční metoda konzistentně dosahuje nominálního pokrytí (0.95, resp. 0.99) ve všech scénářích. To potvrzuje, že samotná asymptotická aproximace (\ref{eq:avar}) je platná, pokud známe skutečnou hodnotu hustoty $f(q_p)$.
+    
+    \item \textbf{Plug-in metoda (modrá)}:
+    \begin{itemize}
+        \item V případě "běžných" dat ($\sigma \le 1.0$) poskytuje uspokojivé výsledky srovnatelné s Oracle metodou.
+        \item V kritickém scénáři ($\sigma=1.5, p=0.99$) však dochází k dramatickému selhání. Pravděpodobnost pokrytí zde klesá hluboko pod cílovou hladinu 0.99 (často i pod 0.50). Graf relativního vychýlení (Obrázek \ref{fig:bias}) odhaluje příčinu: odhad směrodatné chyby je v tomto případě systematicky podhodnocen o více než 40 \%. Jádrový odhad hustoty v řídkém chvostu "přehlazuje" data, nadhodnocuje $f(q_p)$, a tím uměle snižuje odhadovaný rozptyl.
+    \end{itemize}
+    
+    \item \textbf{Bootstrap (červená)}:
+    \begin{itemize}
+        \item Prokazuje mnohem vyšší robustnost vůči asymetrii. I v případě $\sigma=1.5$ si udržuje vyšší pravděpodobnost pokrytí než Plug-in metoda.
+        \item U malých výběrů ($n=30$) však ani Bootstrap nedosahuje ideálního pokrytí 0.99. Zde narážíme na limity malého vzorku, kdy v kritické oblasti chvostu prostě "nejsou data" pro spolehlivé převzorkování.
+    \end{itemize}
 \end{enumerate}
 
 \section{Systematické vychýlení (Relative Bias)}

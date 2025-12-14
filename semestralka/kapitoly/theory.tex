@@ -17,33 +17,27 @@ Pro účely této práce budeme uvažovat Log-normální rozdělení $LN(\mu, \s
     f(x) = \frac{1}{x\sigma\sqrt{2\pi}} e^{-\frac{(\ln x - \mu)^2}{2\sigma^2}}, \quad x > 0.
 \end{equation}
 
-\section{Odvození rozptylu pomocí Taylorova rozvoje}
-Pro odvození asymptotického rozdělení $\hat{q}_p$ využijeme vztah mezi empirickou distribuční funkcí a kvantily. Vycházíme z toho, že $\hat{q}_p$ konverguje v pravděpodobnosti ke $q_p$ (konzistence). Uvažujme Taylorův rozvoj funkce distribuční funkce $F$ v bodě výběrového kvantilu $\hat{q}_p$ v okolí skutečného kvantilu $q_p$ \cite{Serfling1980}:
+\section{Odvození asymptotického rozptylu (Delta metoda)}
+Pro formální odvození asymptotického rozdělení výběrového kvantilu využijeme tzv. Delta metodu aplikovanou na kvantilovou funkci.
+Označme $F$ distribuční funkci a $Q(p) = F^{-1}(p)$ kvantilovou funkci.
+Výběrový kvantil $\hat{q}_p$ lze chápat jako odhad kvantilové funkce v bodě $p$, tedy $\hat{q}_p = \hat{Q}_n(p)$.
+
+Z Centrální limitní věty víme, že pro empirickou distribuční funkci $\hat{F}_n(x)$ v pevném bodě $x$ platí:
 \begin{equation}
-    F(\hat{q}_p) \approx F(q_p) + f(q_p)(\hat{q}_p - q_p) + O_p((\hat{q}_p - q_p)^2).
+    \sqrt{n}(\hat{F}_n(x) - F(x)) \xrightarrow{d} N(0, F(x)(1-F(x))).
 \end{equation}
-Z definice výběrového kvantilu víme, že $F(\hat{q}_p) \approx \hat{F}_n(\hat{q}_p) \approx p$ (zanedbáváme diskrétnost skoků $\hat{F}_n$ řádu $1/n$). Tedy můžeme psát aproximaci:
+
+Abychom přešli od $\hat{F}_n$ ke $\hat{q}_p$, využijeme inverzní vztah. Aplikací funkcionální Delta metody (za předpokladu, že $F$ je diferencovatelná v $q_p$ a $f(q_p) > 0$) dostáváme pro kvantilový proces asymptotický vztah:
 \begin{equation}
-    F(\hat{q}_p) - F(q_p) \approx f(q_p)(\hat{q}_p - q_p).
+    \sqrt{n}(\hat{q}_p - q_p) \xrightarrow{d} N\left(0, \frac{\text{Var}(\mathbb{I}(X \le q_p))}{[f(q_p)]^2}\right).
 \end{equation}
-Jelikož $F(q_p) = p$, levá strana rovnice reprezentuje odchylku empirické distribuční funkce od teoretické hodnoty. Je známo, že $\sqrt{n}(\hat{F}_n(x) - F(x))$ konverguje v distribuci k normálnímu rozdělení $N(0, F(x)(1-F(x)))$ (Donskerova věta). Tedy pro $x=q_p$:
-\begin{equation}
-    \hat{F}_n(q_p) - p \approx -(F(\hat{q}_p) - p) \approx -f(q_p)(\hat{q}_p - q_p).
-\end{equation}
-Vyjádříme-li $(\hat{q}_p - q_p)$, dostáváme tzv. Bahadurovu reprezentaci kvantilu \cite{David2003}:
-\begin{equation}
-    \hat{q}_p - q_p \approx \frac{p - \hat{F}_n(q_p)}{f(q_p)}.
-\end{equation}
-Nyní aplikujeme operátor rozptylu na obě strany. Protože $f(q_p)$ je konstanta, dostáváme asymptotický rozptyl (AVar):
-\begin{equation}
-    \text{AVar}(\hat{q}_p) \approx \frac{1}{[f(q_p)]^2} \text{Var}(\hat{F}_n(q_p)).
-\end{equation}
-Víme, že $n\hat{F}_n(q_p)$ má binomické rozdělení $Bi(n, p)$, a tedy rozptyl $\hat{F}_n(q_p)$ je:
-\begin{equation}
-    \text{Var}(\hat{F}_n(q_p)) = \frac{p(1-p)}{n}.
-\end{equation}
-Dosazením získáme finální vzorec pro asymptotický rozptyl výběrového kvantilu:
+
+V čitateli zlomku je rozptyl indikátorové proměnné, která nabývá hodnoty 1 s pravděpodobností $p$ a 0 s pravděpodobností $1-p$. Její rozptyl je tedy $p(1-p)$.
+Jmenovatel $[f(q_p)]^2$ plyne z derivace inverzní funkce (kvantilové funkce), neboť platí $(F^{-1})'(p) = \frac{1}{f(F^{-1}(p))} = \frac{1}{f(q_p)}$.
+
+Výsledný asymptotický rozptyl výběrového kvantilu je tedy:
 \begin{equation} \label{eq:avar}
     \text{AVar}(\hat{q}_p) = \frac{p(1-p)}{n [f(q_p)]^2}.
 \end{equation}
+Tento výsledek, formálně dokázaný např. v \cite{Serfling1980} nebo \cite{VanDerVaart1998}, ukazuje fundamentální závislost přesnosti odhadu na lokální hustotě pravděpodobnosti. Je-li hustota $f(q_p)$ malá (např. v chvostech rozdělení), stává se jmenovatel velmi malým, což vede k "explozi" rozptylu odhadu.
 Tento výsledek je standardní větou v asymptotické statistice \cite{VanDerVaart1998, Koenker2005}. Ukazuje, že přesnost odhadu kvantilu závisí nepřímo úměrně hodnotě hustoty v daném bodě. V oblastech, kde je hustota nízká (chvosty rozdělení), je rozptyl odhadu kvantilu vysoký.

@@ -32,8 +32,25 @@ $$ \widehat{SE}_{Boot} = \sqrt{\frac{1}{R-1} \sum_{r=1}^R (\hat{q}^*_{p,r} - \ba
 Tato metoda nevyžaduje explicitní odhad hustoty, ale je výpočetně náročnější.
 
 \section{Hodnotící kritéria}
-Pro srovnání metod sledujeme:
-\begin{itemize}
-    \item \textbf{Mean Squared Error (MSE):} Celková chyba odhadu kvantilu.
-    \item \textbf{Coverage Probability (CP):} Procento případů, kdy sestrojený 95\% asymptotický interval spolehlivosti $\hat{q}_p \pm 1.96 \cdot \widehat{SE}$ pokrývá skutečnou hodnotu $q_p$.
-\end{itemize}
+Pro kvantitativní srovnání metod používáme následující kritéria, která hodnotí přesnost a spolehlivost odhadů. Označme $\theta$ skutečnou hodnotu parametru (např. rozptyl kvantilu) a $\hat{\theta}_m$ jeho odhad v $m$-té replikaci Monte Carlo simulace ($m=1,\dots,M$).
+
+\subsection{Mean Squared Error (MSE)}
+Střední čtvercová chyba měří celkovou přesnost odhadu, v níž je zahrnut jak rozptyl odhadu, tak jeho vychýlení. Je definována jako:
+\begin{equation}
+    \text{MSE}(\hat{\theta}) = \frac{1}{M} \sum_{m=1}^M (\hat{\theta}_m - \theta)^2
+\end{equation}
+MSE lze rozložit na složku rozptylu a kvadrát vychýlení: $\text{MSE} = \text{Var}(\hat{\theta}) + [\text{Bias}(\hat{\theta})]^2$. Nízká hodnota MSE indikuje, že odhad je blízko skutečné hodnotě.
+
+\subsection{Relative Bias (Relativní vychýlení)}
+Relativní vychýlení vyjadřuje, o kolik procent metoda v průměru nadhodnocuje nebo podhodnocuje skutečnou hodnotu parametru.
+\begin{equation}
+    \text{RB}(\hat{\theta}) = \frac{\frac{1}{M} \sum_{m=1}^M \hat{\theta}_m - \theta}{\theta} \cdot 100\,\%
+\end{equation}
+Záporná hodnota RB značí systematické podhodnocení (underestimation), což v kontextu odhadu rozptylu vede k příliš úzkým intervalům spolehlivosti. Kladná hodnota značí nadhodnocení (overestimation).
+
+\subsection{Coverage Probability (Pravděpodobnost pokrytí)}
+Coverage Probability (CP) je pravděpodobnost, s jakou sestrojený interval spolehlivosti (CI) překryje skutečnou hodnotu odhadovaného parametru (kvantilu $q_p$).
+\begin{equation}
+    \text{CP} = \frac{1}{M} \sum_{m=1}^M \mathbf{1}(\hat{\theta}_{L,m} \le q_p \le \hat{\theta}_{U,m})
+\end{equation}
+kde $\mathbf{1}(\cdot)$ je indikátorová funkce a $[\hat{\theta}_{L,m}, \hat{\theta}_{U,m}]$ je interval spolehlivosti v $m$-té iteraci. Pro metodu s nominální hladinou spolehlivosti $1-\alpha$ (např. 0.95), by se CP měla blížit hodnotě $1-\alpha$. Výrazně nižší hodnota indikuje, že metoda je antikonzervativní (produkuje příliš mnoho chyb I. druhu).

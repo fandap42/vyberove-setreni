@@ -2,7 +2,15 @@
 Výsledky simulace potvrzují, že odhad rozptylu extrémních kvantilů ($p=0.99$) pomocí asymptotických vzorců je v případě sešikmených dat rizikový.
 
 \section{Analýza selhání Plug-in metody}
-Zatímco pro kvantil $p=0.95$ a 95\% interval spolehlivosti metoda funguje uspokojivě, při požadavku na vysokou spolehlivost (99\% interval pro kvantil $p=0.99$) a vysoké asymetrii ($\sigma=1.5$) dochází k selhání. Odhadnutá hustota $\hat{f}$ je systematicky vychýlená, což vede k podhodnocení směrodatné chyby až o desítky procent, jak ukazuje graf relativního vychýlení. Výsledné intervaly jsou příliš úzké, a proto nepokrývají skutečnou hodnotu s požadovanou pravděpodobností 0.99.
+Klíčovým zjištěním práce je selhání Plug-in metody (založené na jádrovém odhadu hustoty) v oblastech s nízkou pravděpodobností výskytu. Tento jev lze vysvětlit pomocí tzv. \textbf{Bias-Variance tradeoff} při volbě vyhlazovacího okna (bandwidth) u KDE.
+Standardní metody pro volbu šířky okna (např. Scottovo pravidlo, které jsme použili) jsou optimalizovány pro minimalizaci globální chyby (IMSE) přes celý nosič rozdělení. U asymetrických rozdělení, jako je log-normální, je tato globální volba kompromisem, který vede k "přehlazení" (oversmoothing) v oblasti chvostů.
+Důsledek pro odhad rozptylu kvantilu je fatální:
+\begin{enumerate}
+    \item KDE v chvostu nadhodnocuje hustotu ($E[\hat{f}(x)] > f(x)$), protože "rozmazává" pravděpodobnostní hmotu z centra do chvostů.
+    \item Protože rozptyl kvantilu je nepřímo úměrný čtverci hustoty ($AVar \propto 1/f^2$), nadhodnocení hustoty vede k výraznému \textbf{podhodnocení rozptylu}.
+    \item Výsledkem jsou nerealisticky úzké intervaly spolehlivosti, které nedokáží pokrýt skutečnou hodnotu s požadovanou pravděpodobností.
+\end{enumerate}
+Tento metodický nedostatek je u těžkých chvostů principiální a nelze jej snadno odstranit pouhým zvětšením rozsahu výběru, jak ukazují naše výsledky pro $n=1000$.
 
 \section{Doporučení}
 Pro praxi doporučujeme:

@@ -9,7 +9,6 @@ import seaborn as sns
 
 warnings.filterwarnings('ignore')
 
-# Nastavení pro reprodukovatelnost
 np.random.seed(42)
 
 # Nastavení grafů
@@ -23,9 +22,6 @@ plt.rcParams['font.size'] = 11
 plt.rcParams['axes.titlesize'] = 13
 plt.rcParams['axes.labelsize'] = 12
 
-print("Knihovny úspěšně importovány.")
-
-## 3. Pomocné funkce pro log-normální rozdělení
 def lognormal_pdf(x, mu, sigma):
     if np.any(x <= 0):
         return np.where(x > 0, 
@@ -43,7 +39,6 @@ def theoretical_variance_taylor(p, mu, sigma, n):
     f_q = lognormal_pdf(q_p, mu, sigma)
     return (p * (1 - p)) / (n * f_q**2)
 
-## 4. Implementace tří metod odhadu rozptylu
 def estimate_variance_golden(p, mu, sigma, n):
     return theoretical_variance_taylor(p, mu, sigma, n)
 
@@ -70,7 +65,6 @@ def estimate_variance_bootstrap(sample, p, B=1000):
         bootstrap_quantiles[b] = np.quantile(resample, p)
     return np.var(bootstrap_quantiles, ddof=1)
 
-## 5. Monte Carlo simulace: Nastavení parametrů
 SAMPLE_SIZES = [30, 100, 500, 1000]
 SIGMA_VALUES = [0.5, 1.0, 1.5]
 QUANTILE_LEVELS = [0.95, 0.99]
@@ -78,20 +72,10 @@ MU = 0
 M = 500
 B = 100
 
-print("=== Parametry simulace ===")
-print(f"Velikosti výběru (n): {SAMPLE_SIZES}")
-print(f"Parametry tvaru (sigma): {SIGMA_VALUES}")
-print(f"Kvantily (p): {QUANTILE_LEVELS}")
-
-## 6. Hlavní simulační smyčka
 def run_simulation(n, sigma, p, M, B, mu=0):
     true_quantile = lognormal_quantile(p, mu, sigma)
     var_golden = estimate_variance_golden(p, mu, sigma, n)
-    
-    # Výpočet z-skóre pro interval spolehlivosti odpovídající kvantilu p
-    # Pokud p=0.95, chceme 95% CI (1-alpha = 0.95 => alpha = 0.05 => z = norm.ppf(0.975))
-    # Pokud p=0.99, chceme 99% CI (1-alpha = 0.99 => alpha = 0.01 => z = norm.ppf(0.995))
-    # Obecně: alpha = 1 - p
+
     alpha = 1 - p
     z = norm.ppf(1 - alpha/2)
     conf_level = p
@@ -113,7 +97,7 @@ def run_simulation(n, sigma, p, M, B, mu=0):
         'true_quantile': true_quantile,
         'empirical_variance': empirical_variance,
         'theoretical_variance': var_golden,
-        'conf_level': conf_level # Store for plotting
+        'conf_level': conf_level 
     }
     
     # 1. Oracle
@@ -153,7 +137,6 @@ def run_simulation(n, sigma, p, M, B, mu=0):
 
 results_list = []
 
-print(f"Spouštím Monte Carlo simulaci...")
 np.random.seed(42)
 
 for sigma in SIGMA_VALUES:
@@ -165,16 +148,13 @@ for sigma in SIGMA_VALUES:
 
 results_df = pd.DataFrame(results_list)
 
-## 8. Vizualizace
 # Graf 1: Coverage Probability
-print("Generating coverage_probability.png...")
 fig, axes = plt.subplots(2, 3, figsize=(15, 10), sharey=True)
 colors = {'golden': 'green', 'plugin': 'blue', 'bootstrap': 'red'}
 labels = {'golden': 'Taylor (Oracle)', 'plugin': 'Plug-in (KDE)', 'bootstrap': 'Bootstrap'}
 markers = {'golden': 'o', 'plugin': 's', 'bootstrap': '^'}
 
 for row, p in enumerate(QUANTILE_LEVELS):
-    # Determine target coverage for line
     target_cov = p
     
     for col, sigma in enumerate(SIGMA_VALUES):
@@ -190,7 +170,7 @@ for row, p in enumerate(QUANTILE_LEVELS):
         ax.set_xlabel('Velikost výběru (n)')
         ax.set_ylabel('Coverage Probability')
         ax.set_title(f'σ = {sigma}, p = {p} (Target {target_cov})')
-        ax.set_ylim(0.5, 1.01) # Slightly higher to see 0.99
+        ax.set_ylim(0.5, 1.01) 
         if (row == 1 and col == 2):
             ax.legend(loc='lower right', fontsize=9)
         ax.grid(True, alpha=0.3)
@@ -200,7 +180,6 @@ plt.tight_layout()
 plt.savefig('coverage_probability.png', dpi=150, bbox_inches='tight')
 
 # Graf 2: Relativní Bias
-print("Generating relative_bias.png...")
 fig, axes = plt.subplots(2, 3, figsize=(15, 10))
 
 for row, p in enumerate(QUANTILE_LEVELS):
@@ -226,7 +205,6 @@ plt.tight_layout()
 plt.savefig('relative_bias.png', dpi=150, bbox_inches='tight')
 
 # Graf 3: MSE Log-Log
-print("Generating mse_loglog.png...")
 fig, axes = plt.subplots(2, 3, figsize=(15, 10))
 
 for row, p in enumerate(QUANTILE_LEVELS):
@@ -251,4 +229,3 @@ plt.tight_layout()
 plt.savefig('mse_loglog.png', dpi=150, bbox_inches='tight')
 
 results_df.to_csv('simulation_results.csv', index=False)
-print("Hotovo.")
