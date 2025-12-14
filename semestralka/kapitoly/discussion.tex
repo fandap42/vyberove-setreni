@@ -1,13 +1,12 @@
 \chapter{Diskuze}
-Výsledky simulace potvrzují teoretické předpoklady, ale zároveň odhalují limity asymptotických metod v praxi.
+Výsledky simulace potvrzují, že odhad rozptylu extrémních kvantilů ($p=0.99$) pomocí asymptotických vzorců je v případě sešikmených dat rizikový.
 
-\section{Analýza asymptotické aproximace}
-Pro medián ($p=0.50$) a velké rozsahy výběru ($n=1000$) dává Taylorův vzorec velmi přesné výsledky. Oracle metoda i Plug-in metoda s odhadem hustoty poskytují intervaly spolehlivosti s pokrytím blízkým nominálním 95 \%.
+\section{Analýza selhání Plug-in metody}
+Zatímco pro kvantil $p=0.95$ a 95\% interval spolehlivosti metoda funguje uspokojivě, při požadavku na vysokou spolehlivost (99\% interval pro kvantil $p=0.99$) a vysoké asymetrii ($\sigma=1.5$) dochází k selhání. Odhadnutá hustota $\hat{f}$ je systematicky vychýlená, což vede k podhodnocení směrodatné chyby až o desítky procent, jak ukazuje graf relativního vychýlení. Výsledné intervaly jsou příliš úzké, a proto nepokrývají skutečnou hodnotu s požadovanou pravděpodobností 0.99.
 
-Symptomatické selhání nastává u extrémního kvantilu $p=0.99$, a to zejména pro malé rozsahy výběru ($n=30$). V tomto případě je hustota $f(q_p)$ velmi malá ("plochý" chvost), což způsobuje, že zlomek ve vzorci rozptylu (\ref{eq:avar}) nabývá obrovských hodnot. Malá změna v odhadu hustoty $\hat{f}$ ve jmenovateli pak vede k dramatickým chybám v odhadu rozptylu. To vysvětluje nestabilitu Plug-in metody.
-
-\section{Srovnání s Bootstrapem}
-Bootstrap se ukázal jako robustnější alternativa v situacích, kde asymptotický vzorec selhává. U malých výběrů ($n=30$) však i Bootstrap trpí problémy spojenými s diskrétností výběru – v malém vzorku se v oblasti 99\% kvantilu vyskytuje jen velmi málo pozorování, což omezuje variabilitu bootstrapových výběrů a vede k podhodnocení rozptylu (tzv. undercoverage).
-
-\section{Vliv odhadu hustoty}
-Klíčovým problémem Plug-in metody je volba vyhlazovacího parametru. Zjistili jsme, že standardní metody (např. Scottovo pravidlo) mají tendenci vyhlazovat chvosty příliš, což vede k vychýlenému odhadu hustoty v oblasti extrémů a následně nesprávnému intervalu spolehlivosti.
+\section{Doporučení}
+Pro praxi doporučujeme:
+\begin{itemize}
+    \item Pro běžné kvantily ($p \le 0.95$) lze využít Plug-in metodu, pokud je $n$ dostatečně velké ($n > 100$).
+    \item Pro extrémní kvantily ($p=0.99$) a konstrukci intervalů s vysokou spolehlivostí (99 \%) je nutné použít robustnější metody, jako je Bootstrap, nebo metody založené na Teorii extrémních hodnot (EVT), protože standardní asymptotická aproximace v těchto oblastech selhává.
+\end{itemize}

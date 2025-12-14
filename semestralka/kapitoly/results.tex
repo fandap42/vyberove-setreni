@@ -1,22 +1,48 @@
 \chapter{Výsledky}
-V této části prezentujeme výsledky simulační studie.
+V této části prezentujeme výsledky Monte Carlo simulace. Sledujeme chování odhadů pro dvě hladiny kvantilů: $p=0.95$ a $p=0.99$.
+Abychom zachovali konzistenci mezi odhadovaným kvantilem a intervalem spolehlivosti, konstruujeme pro kvantil $p=0.95$ interval spolehlivosti o hladině spolehlivosti 95 \% ($\alpha=0.05$) a pro extrémní kvantil $p=0.99$ interval o hladině 99 \% ($\alpha=0.01$).
 
-\section{Přesnost odhadu a relativní vychýlení}
-Graf níže zobrazuje relativní vychýlení (Relative Bias) odhadu směrodatné chyby pro různé metody.
-
-\begin{figure}[h]
-    \centering
-    \includegraphics[width=1.0\textwidth]{../simulace/relative_bias.png}
-    \caption{Relativní bias odhadu směrodatné chyby (SE)}
-    \label{fig:relative_bias}
-\end{figure}
+Výsledné grafy jsou uspořádány do matice $2\times 3$:
+\begin{itemize}
+    \item \textbf{Řádky:} Horní řada odpovídá kvantilu $p=0.95$ (cílové pokrytí 0.95), dolní řada kvantilu $p=0.99$ (cílové pokrytí 0.99).
+    \item \textbf{Sloupce:} Parametr asymetrie log-normálního rozdělení $\sigma \in \{0.5, 1.0, 1.5\}$.
+\end{itemize}
 
 \section{Pokrytí intervalů spolehlivosti (Coverage)}
-Klíčovým ukazatelem validity metody je pravděpodobnost pokrytí (Coverage Probability). Následující graf ukazuje, jak se pokrytí 95\% intervalů spolehlivosti blíží k nominální hodnotě.
+Obrázek \ref{fig:coverage} zobrazuje pravděpodobnost pokrytí intervalů. Přerušovaná šedá čára značí nominální hladinu (0.95 pro horní řadu, 0.99 pro dolní řadu).
 
-\begin{figure}[h]
+\begin{figure}[H]
     \centering
     \includegraphics[width=1.0\textwidth]{../simulace/coverage_probability.png}
-    \caption{Coverage Probability pro různé metody}
-    \label{fig:coverage_probability}
+    \caption{Coverage Probability. Horní řada: cíl 0.95 (95\% CI). Dolní řada: cíl 0.99 (99\% CI). Metody: Bootstrap (červená), Plug-in (modrá), Oracle (zelená).}
+    \label{fig:coverage}
+\end{figure}
+
+Výsledky ukazují:
+\begin{enumerate}
+    \item \textbf{Oracle metoda (zelená)} konzistentně dosahuje nominálního pokrytí, což validuje teoretický rámec.
+    \item \textbf{Plug-in metoda (modrá)} selhává pro extrémní kvantil $p=0.99$ a vysokou asymetrii $\sigma=1.5$. Coverage zde klesá výrazně pod požadovaných 0.99. Příčinou je podhodnocení rozptylu způsobené jádrovým vyhlazováním.
+    \item \textbf{Bootstrap (červená)} v podmínkách silné asymetrie ($\sigma=1.5$) překonává Plug-in metodu, ale pro malé rozsahy výběru ($n=30$) rovněž nedosahuje cílové hladiny 0.99, což je způsobeno malým počtem pozorování v chvostu.
+\end{enumerate}
+
+\section{Systematické vychýlení (Relative Bias)}
+Obrázek \ref{fig:bias} ukazuje relativní bias odhadu směrodatné chyby.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\textwidth]{../simulace/relative_bias.png}
+    \caption{Relativní vychýlení odhadu směrodatné chyby (SE).}
+    \label{fig:bias}
+\end{figure}
+
+Z grafu je patrné, že se vzrůstajícím $\sigma$ se Plug-in metoda stává silně vychýlenou (záporný bias), což vysvětluje nízké pokrytí intervalů spolehlivosti. Bootstrap vykazuje menší vychýlení.
+
+\section{Konvergence chyby (MSE)}
+Vývoj střední čtvercové chyby (MSE) potvrzuje, že všechny metody jsou asymptoticky konzistentní (chyba klesá s $n$), ale rychlost konvergence se liší v závislosti na parametrech.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\textwidth]{../simulace/mse_loglog.png}
+    \caption{MSE v log-log měřítku.}
+    \label{fig:mse}
 \end{figure}
