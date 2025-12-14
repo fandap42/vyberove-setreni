@@ -1,0 +1,13 @@
+\chapter{Diskuze}
+Výsledky simulace potvrzují teoretické předpoklady, ale zároveň odhalují limity asymptotických metod v praxi.
+
+\section{Analýza asymptotické aproximace}
+Pro medián ($p=0.50$) a velké rozsahy výběru ($n=1000$) dává Taylorův vzorec velmi přesné výsledky. Oracle metoda i Plug-in metoda s odhadem hustoty poskytují intervaly spolehlivosti s pokrytím blízkým nominálním 95 \%.
+
+Symptomatické selhání nastává u extrémního kvantilu $p=0.99$, a to zejména pro malé rozsahy výběru ($n=30$). V tomto případě je hustota $f(q_p)$ velmi malá ("plochý" chvost), což způsobuje, že zlomek ve vzorci rozptylu (\ref{eq:avar}) nabývá obrovských hodnot. Malá změna v odhadu hustoty $\hat{f}$ ve jmenovateli pak vede k dramatickým chybám v odhadu rozptylu. To vysvětluje nestabilitu Plug-in metody.
+
+\section{Srovnání s Bootstrapem}
+Bootstrap se ukázal jako robustnější alternativa v situacích, kde asymptotický vzorec selhává. U malých výběrů ($n=30$) však i Bootstrap trpí problémy spojenými s diskrétností výběru – v malém vzorku se v oblasti 99\% kvantilu vyskytuje jen velmi málo pozorování, což omezuje variabilitu bootstrapových výběrů a vede k podhodnocení rozptylu (tzv. undercoverage).
+
+\section{Vliv odhadu hustoty}
+Klíčovým problémem Plug-in metody je volba vyhlazovacího parametru. Zjistili jsme, že standardní metody (např. Scottovo pravidlo) mají tendenci vyhlazovat chvosty příliš, což vede k vychýlenému odhadu hustoty v oblasti extrémů a následně nesprávnému intervalu spolehlivosti.

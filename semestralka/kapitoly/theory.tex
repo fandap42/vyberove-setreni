@@ -1,0 +1,49 @@
+\chapter{Teoretická část}
+V této kapitole se zaměříme na odvození asymptotického rozptylu výběrového kvantilu. Toto odvození je klíčové pro pochopení "Oracle" metody i "Plug-in" metody, které budeme později zkoumat.
+
+\section{Definice a značení}
+Nechť $X_1, X_2, \dots, X_n$ je náhodný výběr z rozdělení se spojitou distribuční funkcí $F(x)$ a hustotou pravděpodobnosti $f(x)$.
+Definujme $p$-tý teoretický kvantil $q_p$ jako hodnotu, pro kterou platí:
+\begin{equation}
+    F(q_p) = p, \quad \text{kde } p \in (0, 1).
+\end{equation}
+Výběrový kvantil $\hat{q}_p$ je definován pomocí empirické distribuční funkce $\hat{F}_n(x)$ jako:
+\begin{equation}
+    \hat{q}_p = \hat{F}_n^{-1}(p) = \inf \{x: \hat{F}_n(x) \ge p\}.
+\end{equation}
+
+Pro účely této práce budeme uvažovat Log-normální rozdělení $LN(\mu, \sigma^2)$, jehož hustota je dána:
+\begin{equation}
+    f(x) = \frac{1}{x\sigma\sqrt{2\pi}} e^{-\frac{(\ln x - \mu)^2}{2\sigma^2}}, \quad x > 0.
+\end{equation}
+
+\section{Odvození rozptylu pomocí Taylorova rozvoje}
+Pro odvození asymptotického rozdělení $\hat{q}_p$ využijeme vztah mezi empirickou distribuční funkcí a kvantily. Vycházíme z toho, že $\hat{q}_p$ konverguje v pravděpodobnosti ke $q_p$ (konzistence). Uvažujme Taylorův rozvoj funkce distribuční funkce $F$ v bodě výběrového kvantilu $\hat{q}_p$ v okolí skutečného kvantilu $q_p$ \cite{Serfling1980}:
+\begin{equation}
+    F(\hat{q}_p) \approx F(q_p) + f(q_p)(\hat{q}_p - q_p) + O_p((\hat{q}_p - q_p)^2).
+\end{equation}
+Z definice výběrového kvantilu víme, že $F(\hat{q}_p) \approx \hat{F}_n(\hat{q}_p) \approx p$ (zanedbáváme diskrétnost skoků $\hat{F}_n$ řádu $1/n$). Tedy můžeme psát aproximaci:
+\begin{equation}
+    F(\hat{q}_p) - F(q_p) \approx f(q_p)(\hat{q}_p - q_p).
+\end{equation}
+Jelikož $F(q_p) = p$, levá strana rovnice reprezentuje odchylku empirické distribuční funkce od teoretické hodnoty. Je známo, že $\sqrt{n}(\hat{F}_n(x) - F(x))$ konverguje v distribuci k normálnímu rozdělení $N(0, F(x)(1-F(x)))$ (Donskerova věta). Tedy pro $x=q_p$:
+\begin{equation}
+    \hat{F}_n(q_p) - p \approx -(F(\hat{q}_p) - p) \approx -f(q_p)(\hat{q}_p - q_p).
+\end{equation}
+Vyjádříme-li $(\hat{q}_p - q_p)$, dostáváme tzv. Bahadurovu reprezentaci kvantilu \cite{David2003}:
+\begin{equation}
+    \hat{q}_p - q_p \approx \frac{p - \hat{F}_n(q_p)}{f(q_p)}.
+\end{equation}
+Nyní aplikujeme operátor rozptylu na obě strany. Protože $f(q_p)$ je konstanta, dostáváme asymptotický rozptyl (AVar):
+\begin{equation}
+    \text{AVar}(\hat{q}_p) \approx \frac{1}{[f(q_p)]^2} \text{Var}(\hat{F}_n(q_p)).
+\end{equation}
+Víme, že $n\hat{F}_n(q_p)$ má binomické rozdělení $Bi(n, p)$, a tedy rozptyl $\hat{F}_n(q_p)$ je:
+\begin{equation}
+    \text{Var}(\hat{F}_n(q_p)) = \frac{p(1-p)}{n}.
+\end{equation}
+Dosazením získáme finální vzorec pro asymptotický rozptyl výběrového kvantilu:
+\begin{equation} \label{eq:avar}
+    \text{AVar}(\hat{q}_p) = \frac{p(1-p)}{n [f(q_p)]^2}.
+\end{equation}
+Tento výsledek je standardní větou v asymptotické statistice \cite{VanDerVaart1998, Koenker2005}. Ukazuje, že přesnost odhadu kvantilu závisí nepřímo úměrně hodnotě hustoty v daném bodě. V oblastech, kde je hustota nízká (chvosty rozdělení), je rozptyl odhadu kvantilu vysoký.

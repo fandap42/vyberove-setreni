@@ -1,0 +1,39 @@
+\chapter{Metodika simulační studie}
+Pro ověření přesnosti teoretického vzorce a srovnání s alternativními metodami jsme navrhli Monte Carlo simulační studii.
+
+\section{Generování dat}
+Jako podkladová data používáme log-normální rozdělení $LN(\mu, \sigma^2)$ s parametry $\mu=0$ a $\sigma=1$. Toto nastavení generuje data s pravostrannou asymetrií (šikmost $\approx 6.18$).
+Generujeme náhodné výběry o rozsahu $n \in \{30, 100, 1000\}$ pro simulaci malých, středních a velkých datových souborů.
+
+Pro každý výběr odhadujeme tři kvantily reprezentující různé části rozdělení:
+\begin{itemize}
+    \item $p=0.50$ (medián) - oblast s vysokou hustotou pravděpodobnosti.
+    \item $p=0.95$ - začátek chvostu.
+    \item $p=0.99$ - extrémní chvost, kde je hustota $f(q_p)$ velmi nízká.
+\end{itemize}
+Počet replikací simulation byl stanoven na $B=1000$.
+
+\section{Srovnávané metody}
+V rámci studie porovnáváme tři přístupy k odhadu směrodatné chyby (SE) kvantilu:
+
+\subsection{1. Teoretický (Oracle) Taylor}
+Tato metoda využívá znalosti skutečného rozdělení, ze kterého data pocházejí. Do vzorce (\ref{eq:avar}) dosazujeme skutečnou hustotu $f(q_p)$ log-normálního rozdělení.
+$$ \widehat{SE}_{Oracle} = \sqrt{\frac{p(1-p)}{n [f_{LN}(q_p)]^2}} $$
+Tato metoda slouží jako "zlatý standard" (benchmark), kterého v praxi nelze dosáhnout, ale ukazuje teoretickou mez přesnosti asymptotické aproximace.
+
+\subsection{2. Praktický (Plug-in) Taylor}
+Tato metoda je aplikovatelná v praxi, kdy neznáme skutečnou hustotu $f$. Místo ní použijeme její odhad $\hat{f}(q_p)$. V naší studii využíváme jádrový odhad hustoty (Kernel Density Estimation - KDE) s Gaussovským jádrem a Scottovým pravidlem pro volbu šířky vyhlazovacího okna (bandwidth).
+$$ \widehat{SE}_{Plugin} = \sqrt{\frac{p(1-p)}{n [\hat{f}_{KDE}(\hat{q}_p)]^2}} $$
+Nevýhodou je, že chyba odhadu hustoty se přenáší do chyby odhadu rozptylu kvantilu.
+
+\subsection{3. Bootstrap}
+Neparametrický bootstrap je metoda založená na převzorkování. Z původního výběru vytvoříme $R=200$ bootstrapových výběrů (výběr s vracením), pro každý spočítáme výběrový kvantil $\hat{q}^*_p$ a rozptyl odhadujeme jako výběrový rozptyl těchto bootstrapových kvantilů.
+$$ \widehat{SE}_{Boot} = \sqrt{\frac{1}{R-1} \sum_{r=1}^R (\hat{q}^*_{p,r} - \bar{q}^*_p)^2} $$
+Tato metoda nevyžaduje explicitní odhad hustoty, ale je výpočetně náročnější.
+
+\section{Hodnotící kritéria}
+Pro srovnání metod sledujeme:
+\begin{itemize}
+    \item \textbf{Mean Squared Error (MSE):} Celková chyba odhadu kvantilu.
+    \item \textbf{Coverage Probability (CP):} Procento případů, kdy sestrojený 95\% asymptotický interval spolehlivosti $\hat{q}_p \pm 1.96 \cdot \widehat{SE}$ pokrývá skutečnou hodnotu $q_p$.
+\end{itemize}
