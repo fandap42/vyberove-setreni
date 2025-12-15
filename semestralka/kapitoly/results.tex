@@ -1,42 +1,32 @@
 \chapter{Výsledky}
-V této části prezentujeme výsledky Monte Carlo simulace. Sledujeme chování odhadů pro dvě hladiny kvantilů: $p=0.95$ a $p=0.99$.
-Abychom zachovali konzistenci mezi odhadovaným kvantilem a intervalem spolehlivosti, konstruujeme pro kvantil $p=0.95$ interval spolehlivosti o hladině spolehlivosti 95 \% ($\alpha=0.05$) a pro extrémní kvantil $p=0.99$ interval o hladině 99 \% ($\alpha=0.01$).
+V této části prezentujeme výsledky Monte Carlo simulace. Sledujeme chování odhadů pro tři hladiny kvantilů: $p=0.50$, $p=0.95$ a $p=0.99$.
+Pro všechny kvantily je konstruován 95\% interval spoelhlivosti.
 
-Výsledné grafy jsou uspořádány do matice $2\times 3$:
+Výsledné grafy jsou uspořádány do matice $3\times 3$:
 \begin{itemize}
-    \item \textbf{Řádky:} Horní řada odpovídá kvantilu $p=0.95$ (cílové pokrytí 0.95), dolní řada kvantilu $p=0.99$ (cílové pokrytí 0.99).
+    \item \textbf{Řádky:} Horní řada odpovídá kvantilu $p=0.50$ (cílové pokrytí 0.5),Prostřední řada odpovídá kvantilu $p=0.95$ (cílové pokrytí 0.95), dolní řada kvantilu $p=0.99$ (cílové pokrytí 0.99).
     \item \textbf{Sloupce:} Parametr asymetrie log-normálního rozdělení $\sigma \in \{0.5, 1.0, 1.5\}$.
 \end{itemize}
 
-\section{Pokrytí intervalů spolehlivosti (Coverage)}
-Obrázek \ref{fig:coverage} zobrazuje pravděpodobnost pokrytí intervalů. Přerušovaná šedá čára značí nominální hladinu (0.95 pro horní řadu, 0.99 pro dolní řadu).
+\section{Pokrytí intervalu spolehlivosti}
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=1.0\textwidth]{../simulace/coverage_probability.png}
-    \caption{Coverage Probability. Horní řada: cíl 0.95 (95\% CI). Dolní řada: cíl 0.99 (99\% CI). Metody: Bootstrap (červená), Plug-in (modrá), Oracle (zelená).}
+    \caption{Pokrytí intevalu spolehlivosti. Metody: Bootstrap (červená), Plug-in (modrá), Oracle (zelená).}
     \label{fig:coverage}
 \end{figure}
 
 Výsledky ukazují zřetelný rozdíl v chování metod v závislosti na parametrech simulace:
 \begin{enumerate}
-    \item \textbf{Oracle metoda (zelená)}: Tato referenční metoda konzistentně dosahuje nominálního pokrytí (0.95, resp. 0.99) ve všech scénářích. To potvrzuje, že samotná asymptotická aproximace (\ref{eq:avar}) je platná, pokud známe skutečnou hodnotu hustoty $f(q_p)$.
+    \item \textbf{Teoretická delta metoda (zelená)}: Tato referenční metoda konzistentně dosahuje nominálního pokrytí ve všech scénářích. To potvrzuje, že samotná asymptotická aproximace (\ref{eq:avar}) je platná, pokud známe skutečnou hodnotu hustoty $f(q_p)$.
     
-    \item \textbf{Plug-in metoda (modrá)}:
-    \begin{itemize}
-        \item V případě "běžných" dat ($\sigma \le 1.0$) poskytuje uspokojivé výsledky srovnatelné s Oracle metodou.
-        \item V kritickém scénáři ($\sigma=1.5, p=0.99$) však dochází k dramatickému selhání. Pravděpodobnost pokrytí zde klesá hluboko pod cílovou hladinu 0.99 (často i pod 0.50). Graf relativního vychýlení (Obrázek \ref{fig:bias}) odhaluje příčinu: odhad směrodatné chyby je v tomto případě systematicky podhodnocen o více než 40 \%. Jádrový odhad hustoty v řídkém chvostu "přehlazuje" data, nadhodnocuje $f(q_p)$, a tím uměle snižuje odhadovaný rozptyl.
-    \end{itemize}
+    \item \textbf{Plug-in metoda (modrá)}: V případě "běžných" dat ($\sigma \le 1.0$) poskytuje uspokojivé výsledky srovnatelné s Oracle metodou. V kritickém scénáři ($\sigma=1.5, p=0.99$) však dochází k dramatickému selhání. Pravděpodobnost pokrytí zde klesá hluboko pod cílovou hladinu 0.99 (často i pod 0.50). Graf relativního vychýlení (Obrázek \ref{fig:bias}) odhaluje příčinu: odhad směrodatné chyby je v tomto případě systematicky podhodnocen o více než 40 \%. Jádrový odhad hustoty v řídkém chvostu "přehlazuje" data, nadhodnocuje $f(q_p)$, a tím uměle snižuje odhadovaný rozptyl.
     
-    \item \textbf{Bootstrap (červená)}:
-    \begin{itemize}
-        \item Prokazuje mnohem vyšší robustnost vůči asymetrii. I v případě $\sigma=1.5$ si udržuje vyšší pravděpodobnost pokrytí než Plug-in metoda.
-        \item U malých výběrů ($n=30$) však ani Bootstrap nedosahuje ideálního pokrytí 0.99. Zde narážíme na limity malého vzorku, kdy v kritické oblasti chvostu prostě "nejsou data" pro spolehlivé převzorkování.
-    \end{itemize}
+    \item \textbf{Bootstrap (červená)}: Prokazuje mnohem vyšší robustnost vůči asymetrii. I v případě $\sigma=1.5$ si udržuje vyšší pravděpodobnost pokrytí než Plug-in metoda. U malých výběrů ($n=30$) však ani Bootstrap nedosahuje ideálního pokrytí 0.99. Zde narážíme na limity malého vzorku, kdy v kritické oblasti chvostu prostě "nejsou data" pro spolehlivé převzorkování.
 \end{enumerate}
 
 \section{Systematické vychýlení (Relative Bias)}
-Obrázek \ref{fig:bias} ukazuje relativní bias odhadu směrodatné chyby.
 
 \begin{figure}[H]
     \centering

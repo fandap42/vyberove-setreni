@@ -135,7 +135,6 @@ def run_simulation(n, sigma, p, M, B, mu=0):
     return results
 
 def main():
-    # Flatten parameters for parallel execution
     param_combinations = []
     for sigma in SIGMA_VALUES:
         for p in QUANTILE_LEVELS:
@@ -147,13 +146,11 @@ def main():
 
     results_list = []
     with ProcessPoolExecutor(max_workers=workers) as executor:
-        # Submit all tasks
         future_to_params = {
             executor.submit(run_simulation, n, sigma, p, M, B, MU): (n, sigma, p)
             for n, sigma, p in param_combinations
         }
         
-        # Process results as they complete
         for future in tqdm(as_completed(future_to_params), total=len(param_combinations), desc="Simulating"):
             try:
                 result = future.result()
@@ -212,7 +209,7 @@ def main():
             ax.set_xlabel('Velikost výběru (n)')
             ax.set_ylabel('Relativní Bias (%)')
             ax.set_title(f'σ = {sigma}, p = {p}')
-            ax.set_ylim(-100, 100)  # Limit to +/- 100% to handle extreme outliers
+            ax.set_ylim(-100, 100) 
             if (row == 0 and col == 0):
                 ax.legend(loc='best', fontsize=9)
             ax.grid(True, alpha=0.3)

@@ -1,5 +1,5 @@
 \chapter{Teoretická část}
-V této kapitole se zaměříme na odvození asymptotického rozptylu výběrového kvantilu. Toto odvození je klíčové pro pochopení "Oracle" metody i "Plug-in" metody, které budeme později zkoumat.
+V této kapitole se zaměříme na odvození asymptotického rozptylu výběrového kvantilu. Toto odvození je bude dále použito jako základ metod pro odhad rozptylu kvantilů ve výběrových šetřeních.
 
 \section{Definice a značení}
 Nechť $X_1, X_2, \dots, X_n$ je náhodný výběr z rozdělení se spojitou distribuční funkcí $F(x)$ a hustotou pravděpodobnosti $f(x)$.
@@ -39,5 +39,5 @@ Výsledný asymptotický rozptyl výběrového kvantilu je tedy:
 \begin{equation} \label{eq:avar}
     \text{AVar}(\hat{q}_p) = \frac{p(1-p)}{n [f(q_p)]^2}.
 \end{equation}
-Tento výsledek, formálně dokázaný např. v \cite{Serfling1980} nebo \cite{VanDerVaart1998}, ukazuje fundamentální závislost přesnosti odhadu na lokální hustotě pravděpodobnosti. Je-li hustota $f(q_p)$ malá (např. v chvostech rozdělení), stává se jmenovatel velmi malým, což vede k "explozi" rozptylu odhadu.
-Tento výsledek je standardní větou v asymptotické statistice \cite{VanDerVaart1998, Koenker2005}. Ukazuje, že přesnost odhadu kvantilu závisí nepřímo úměrně hodnotě hustoty v daném bodě. V oblastech, kde je hustota nízká (chvosty rozdělení), je rozptyl odhadu kvantilu vysoký.
+Tento metoda je odvozena v \parencite{VanDerVaart1998}, ukazuje závislost přesnosti odhadu na pravděpodobnostní funkci. Je-li hustota $f(q_p)$ malá (např. v chvostech rozdělení), stává se jmenovatel velmi malým, což vede k velkým odhadům rozptylu.
+Tento výsledek je standardní větou v asymptotické statistice \parencite{VanDerVaart1998}. Ukazuje, že přesnost odhadu kvantilu závisí nepřímo úměrně hodnotě hustoty v daném bodě. V oblastech, kde je hustota nízká (chvosty rozdělení), je rozptyl odhadu kvantilu vysoký.
