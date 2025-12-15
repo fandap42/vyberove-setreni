@@ -1,4 +1,6 @@
 import numpy as np
+import os
+from concurrent.futures import ProcessPoolExecutor, as_completed
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy import stats
@@ -132,98 +134,117 @@ def run_simulation(n, sigma, p, M, B, mu=0):
     
     return results
 
-results_list = []
+def main():
+    # Flatten parameters for parallel execution
+    param_combinations = []
+    for sigma in SIGMA_VALUES:
+        for p in QUANTILE_LEVELS:
+            for n in SAMPLE_SIZES:
+                param_combinations.append((n, sigma, p))
 
-np.random.seed(42)
+    workers = os.cpu_count()
+    print(f"Starting simulation with {len(param_combinations)} tasks using ProcessPoolExecutor on {workers} cores...")
 
-for sigma in SIGMA_VALUES:
-    for p in QUANTILE_LEVELS:
-        print(f"Running sigma={sigma}, p={p}")
-        for n in tqdm(SAMPLE_SIZES, desc=f"sim"):
-            result = run_simulation(n, sigma, p, M, B, MU)
-            results_list.append(result)
-
-results_df = pd.DataFrame(results_list)
-
-# Graf 1: Coverage Probability
-# Graf 1: Coverage Probability
-fig, axes = plt.subplots(3, 3, figsize=(15, 15), sharey=True)
-colors = {'golden': 'green', 'plugin': 'blue', 'bootstrap': 'red'}
-labels = {'golden': 'Taylor (Oracle)', 'plugin': 'Plug-in (KDE)', 'bootstrap': 'Bootstrap'}
-markers = {'golden': 'o', 'plugin': 's', 'bootstrap': '^'}
-
-for row, p in enumerate(QUANTILE_LEVELS):
-    target_cov = 0.95
-    
-    for col, sigma in enumerate(SIGMA_VALUES):
-        ax = axes[row, col]
-        subset = results_df[(results_df['p'] == p) & (results_df['sigma'] == sigma)]
+    results_list = []
+    with ProcessPoolExecutor(max_workers=workers) as executor:
+        # Submit all tasks
+        future_to_params = {
+            executor.submit(run_simulation, n, sigma, p, M, B, MU): (n, sigma, p)
+            for n, sigma, p in param_combinations
+        }
         
-        for method in ['golden', 'plugin', 'bootstrap']:
-            ax.plot(subset['n'], subset[f'{method}_coverage'], 
-                   color=colors[method], marker=markers[method], 
-                   label=labels[method], linewidth=2, markersize=8)
+        # Process results as they complete
+        for future in tqdm(as_completed(future_to_params), total=len(param_combinations), desc="Simulating"):
+            try:
+                result = future.result()
+                results_list.append(result)
+            except Exception as exc:
+                n, sigma, p = future_to_params[future]
+                print(f'Task (n={n}, sigma={sigma}, p={p}) generated an exception: {exc}')
+
+    results_df = pd.DataFrame(results_list)
+
+    # Graf 1: Coverage Probability
+    fig, axes = plt.subplots(3, 3, figsize=(15, 15), sharey=True)
+    colors = {'golden': 'green', 'plugin': 'blue', 'bootstrap': 'red'}
+    labels = {'golden': 'Taylor (Oracle)', 'plugin': 'Plug-in (KDE)', 'bootstrap': 'Bootstrap'}
+    markers = {'golden': 'o', 'plugin': 's', 'bootstrap': '^'}
+
+    for row, p in enumerate(QUANTILE_LEVELS):
+        target_cov = 0.95
         
-        ax.axhline(y=target_cov, color='gray', linestyle='--', alpha=0.7, label=f'Nominální {target_cov*100:.0f}%')
-        ax.set_xlabel('Velikost výběru (n)')
-        ax.set_ylabel('Coverage Probability')
-        ax.set_title(f'σ = {sigma}, p = {p} (Target {target_cov})')
-        ax.set_ylim(0.5, 1.01) 
-        if (row == 2 and col == 2):
-            ax.legend(loc='lower right', fontsize=9)
-        ax.grid(True, alpha=0.3)
+        for col, sigma in enumerate(SIGMA_VALUES):
+            ax = axes[row, col]
+            subset = results_df[(results_df['p'] == p) & (results_df['sigma'] == sigma)]
+            
+            for method in ['golden', 'plugin', 'bootstrap']:
+                ax.plot(subset['n'], subset[f'{method}_coverage'], 
+                       color=colors[method], marker=markers[method], 
+                       label=labels[method], linewidth=2, markersize=8)
+            
+            ax.axhline(y=target_cov, color='gray', linestyle='--', alpha=0.7, label=f'Nominální {target_cov*100:.0f}%')
+            ax.set_xlabel('Velikost výběru (n)')
+            ax.set_ylabel('Coverage Probability')
+            ax.set_title(f'σ = {sigma}, p = {p} (Target {target_cov})')
+            ax.set_ylim(0.5, 1.01) 
+            if (row == 2 and col == 2):
+                ax.legend(loc='lower right', fontsize=9)
+            ax.grid(True, alpha=0.3)
 
-plt.suptitle('Coverage Probability (95% CI)', fontsize=14, fontweight='bold')
-plt.tight_layout()
-plt.savefig('coverage_probability.png', dpi=150, bbox_inches='tight')
+    plt.suptitle('Coverage Probability (95% CI)', fontsize=14, fontweight='bold')
+    plt.tight_layout()
+    plt.savefig('coverage_probability.png', dpi=150, bbox_inches='tight')
 
-# Graf 2: Relativní Bias
-fig, axes = plt.subplots(3, 3, figsize=(15, 15))
+    # Graf 2: Relativní Bias
+    fig, axes = plt.subplots(3, 3, figsize=(15, 15))
 
-for row, p in enumerate(QUANTILE_LEVELS):
-    for col, sigma in enumerate(SIGMA_VALUES):
-        ax = axes[row, col]
-        subset = results_df[(results_df['p'] == p) & (results_df['sigma'] == sigma)]
-        
-        for method in ['golden', 'plugin', 'bootstrap']:
-            ax.plot(subset['n'], subset[f'{method}_rel_bias'] * 100, 
-                   color=colors[method], marker=markers[method], 
-                   label=labels[method], linewidth=2, markersize=8)
-        
-        ax.axhline(y=0, color='gray', linestyle='--', alpha=0.7)
-        ax.set_xlabel('Velikost výběru (n)')
-        ax.set_ylabel('Relativní Bias (%)')
-        ax.set_title(f'σ = {sigma}, p = {p}')
-        if (row == 0 and col == 0):
-            ax.legend(loc='best', fontsize=9)
-        ax.grid(True, alpha=0.3)
+    for row, p in enumerate(QUANTILE_LEVELS):
+        for col, sigma in enumerate(SIGMA_VALUES):
+            ax = axes[row, col]
+            subset = results_df[(results_df['p'] == p) & (results_df['sigma'] == sigma)]
+            
+            for method in ['golden', 'plugin', 'bootstrap']:
+                ax.plot(subset['n'], subset[f'{method}_rel_bias'] * 100, 
+                       color=colors[method], marker=markers[method], 
+                       label=labels[method], linewidth=2, markersize=8)
+            
+            ax.axhline(y=0, color='gray', linestyle='--', alpha=0.7)
+            ax.set_xlabel('Velikost výběru (n)')
+            ax.set_ylabel('Relativní Bias (%)')
+            ax.set_title(f'σ = {sigma}, p = {p}')
+            if (row == 0 and col == 0):
+                ax.legend(loc='best', fontsize=9)
+            ax.grid(True, alpha=0.3)
 
-plt.suptitle('Relativní Bias odhadu rozptylu', fontsize=14, fontweight='bold')
-plt.tight_layout()
-plt.savefig('relative_bias.png', dpi=150, bbox_inches='tight')
+    plt.suptitle('Relativní Bias odhadu rozptylu', fontsize=14, fontweight='bold')
+    plt.tight_layout()
+    plt.savefig('relative_bias.png', dpi=150, bbox_inches='tight')
 
-# Graf 3: MSE Log-Log
-fig, axes = plt.subplots(3, 3, figsize=(15, 15))
+    # Graf 3: MSE Log-Log
+    fig, axes = plt.subplots(3, 3, figsize=(15, 15))
 
-for row, p in enumerate(QUANTILE_LEVELS):
-    for col, sigma in enumerate(SIGMA_VALUES):
-        ax = axes[row, col]
-        subset = results_df[(results_df['p'] == p) & (results_df['sigma'] == sigma)]
-        
-        for method in ['plugin', 'bootstrap']:
-            ax.loglog(subset['n'], subset[f'{method}_mse'], 
-                     color=colors[method], marker=markers[method], 
-                     label=labels[method], linewidth=2, markersize=8)
-        
-        ax.set_xlabel('Velikost výběru (n)')
-        ax.set_ylabel('MSE')
-        ax.set_title(f'σ = {sigma}, p = {p}')
-        if (row == 0 and col == 0):
-            ax.legend(loc='best', fontsize=9)
-        ax.grid(True, alpha=0.3, which='both')
+    for row, p in enumerate(QUANTILE_LEVELS):
+        for col, sigma in enumerate(SIGMA_VALUES):
+            ax = axes[row, col]
+            subset = results_df[(results_df['p'] == p) & (results_df['sigma'] == sigma)]
+            
+            for method in ['plugin', 'bootstrap']:
+                ax.loglog(subset['n'], subset[f'{method}_mse'], 
+                         color=colors[method], marker=markers[method], 
+                         label=labels[method], linewidth=2, markersize=8)
+            
+            ax.set_xlabel('Velikost výběru (n)')
+            ax.set_ylabel('MSE')
+            ax.set_title(f'σ = {sigma}, p = {p}')
+            if (row == 0 and col == 0):
+                ax.legend(loc='best', fontsize=9)
+            ax.grid(True, alpha=0.3, which='both')
 
-plt.suptitle('MSE odhadu rozptylu (log-log škála)', fontsize=14, fontweight='bold')
-plt.tight_layout()
-plt.savefig('mse_loglog.png', dpi=150, bbox_inches='tight')
+    plt.suptitle('MSE odhadu rozptylu (log-log škála)', fontsize=14, fontweight='bold')
+    plt.tight_layout()
+    plt.savefig('mse_loglog.png', dpi=150, bbox_inches='tight')
 
-results_df.to_csv('simulation_results.csv', index=False)
+    results_df.to_csv('simulation_results.csv', index=False)
+
+if __name__ == '__main__':
+    main()
