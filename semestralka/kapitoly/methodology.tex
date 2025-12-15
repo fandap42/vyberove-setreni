@@ -31,6 +31,13 @@ Neparametrický bootstrap je metoda založená na převzorkování. Z původníh
 $$ \widehat{SE}_{Boot} = \sqrt{\frac{1}{R-1} \sum_{r=1}^R (\hat{q}^*_{p,r} - \bar{q}^*_p)^2} $$
 Tato metoda nevyžaduje explicitní odhad hustoty, ale je výpočetně náročnější.
 
+\subsection{Konstrukce intervalů spolehlivosti}
+Pro všechny tři metody konstruujeme oboustranné intervaly spolehlivosti na hladině spolehlivosti $95\%$ ($\alpha = 0.05$). Využíváme asymptotické normality výběrového kvantilu (Waldův typ intervalu):
+\begin{equation}
+    CI_{0.95} = \left[ \hat{q}_p - z_{0.975} \cdot \widehat{SE}, \quad \hat{q}_p + z_{0.975} \cdot \widehat{SE} \right],
+\end{equation}
+kde $z_{0.975} \approx 1.96$ je $0.975$ kvantil standardizovaného normálního rozdělení. I pro metodu Bootstrap tedy v této studii využíváme normální aproximaci s odhadnutou směrodatnou chybou, nikoliv percentilovou metodu.
+
 \section{Hodnotící kritéria}
 Pro kvantitativní srovnání metod používáme následující kritéria, která hodnotí přesnost a spolehlivost odhadů. Označme $\theta$ skutečnou hodnotu parametru (např. rozptyl kvantilu) a $\hat{\theta}_m$ jeho odhad v $m$-té replikaci Monte Carlo simulace ($m=1,\dots,M$).
 

@@ -64,7 +64,7 @@ def estimate_variance_bootstrap(sample, p, B=1000):
 
 SAMPLE_SIZES = [30, 100, 500, 1000]
 SIGMA_VALUES = [0.5, 1.0, 1.5]
-QUANTILE_LEVELS = [0.95, 0.99]
+QUANTILE_LEVELS = [0.5, 0.95, 0.99]
 MU = 0
 M = 500
 B = 100
@@ -73,9 +73,9 @@ def run_simulation(n, sigma, p, M, B, mu=0):
     true_quantile = lognormal_quantile(p, mu, sigma)
     var_golden = estimate_variance_golden(p, mu, sigma, n)
 
-    alpha = 1 - p
+    conf_level = 0.95
+    alpha = 1 - conf_level
     z = norm.ppf(1 - alpha/2)
-    conf_level = p
         
     sample_quantiles = np.zeros(M)
     var_plugin_estimates = np.zeros(M)
@@ -146,13 +146,14 @@ for sigma in SIGMA_VALUES:
 results_df = pd.DataFrame(results_list)
 
 # Graf 1: Coverage Probability
-fig, axes = plt.subplots(2, 3, figsize=(15, 10), sharey=True)
+# Graf 1: Coverage Probability
+fig, axes = plt.subplots(3, 3, figsize=(15, 15), sharey=True)
 colors = {'golden': 'green', 'plugin': 'blue', 'bootstrap': 'red'}
 labels = {'golden': 'Taylor (Oracle)', 'plugin': 'Plug-in (KDE)', 'bootstrap': 'Bootstrap'}
 markers = {'golden': 'o', 'plugin': 's', 'bootstrap': '^'}
 
 for row, p in enumerate(QUANTILE_LEVELS):
-    target_cov = p
+    target_cov = 0.95
     
     for col, sigma in enumerate(SIGMA_VALUES):
         ax = axes[row, col]
@@ -168,16 +169,16 @@ for row, p in enumerate(QUANTILE_LEVELS):
         ax.set_ylabel('Coverage Probability')
         ax.set_title(f'σ = {sigma}, p = {p} (Target {target_cov})')
         ax.set_ylim(0.5, 1.01) 
-        if (row == 1 and col == 2):
+        if (row == 2 and col == 2):
             ax.legend(loc='lower right', fontsize=9)
         ax.grid(True, alpha=0.3)
 
-plt.suptitle('Coverage Probability (95% CI pro p=0.95, 99% CI pro p=0.99)', fontsize=14, fontweight='bold')
+plt.suptitle('Coverage Probability (95% CI)', fontsize=14, fontweight='bold')
 plt.tight_layout()
 plt.savefig('coverage_probability.png', dpi=150, bbox_inches='tight')
 
 # Graf 2: Relativní Bias
-fig, axes = plt.subplots(2, 3, figsize=(15, 10))
+fig, axes = plt.subplots(3, 3, figsize=(15, 15))
 
 for row, p in enumerate(QUANTILE_LEVELS):
     for col, sigma in enumerate(SIGMA_VALUES):
@@ -202,7 +203,7 @@ plt.tight_layout()
 plt.savefig('relative_bias.png', dpi=150, bbox_inches='tight')
 
 # Graf 3: MSE Log-Log
-fig, axes = plt.subplots(2, 3, figsize=(15, 10))
+fig, axes = plt.subplots(3, 3, figsize=(15, 15))
 
 for row, p in enumerate(QUANTILE_LEVELS):
     for col, sigma in enumerate(SIGMA_VALUES):
