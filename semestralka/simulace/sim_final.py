@@ -64,12 +64,12 @@ def estimate_variance_bootstrap(sample, p, B=1000):
         bootstrap_quantiles[b] = np.quantile(resample, p)
     return np.var(bootstrap_quantiles, ddof=1)
 
-SAMPLE_SIZES = [30, 100, 500, 1000]
+SAMPLE_SIZES = [30, 100, 250, 500, 1000, 1500, 2000]
 SIGMA_VALUES = [0.5, 1.0, 1.5]
 QUANTILE_LEVELS = [0.5, 0.95, 0.99]
 MU = 0
-M = 500
-B = 100
+M = 5000
+B = 1000
 
 def run_simulation(n, sigma, p, M, B, mu=0):
     true_quantile = lognormal_quantile(p, mu, sigma)
