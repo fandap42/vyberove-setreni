@@ -1,10 +1,10 @@
-\chapter{Výsledky}
+\chapter{Simulační studie}
 V této části prezentujeme výsledky Monte Carlo simulace. Sledujeme chování odhadů pro tři hladiny kvantilů: $p=0.50$, $p=0.95$ a $p=0.99$.
-Pro všechny kvantily je konstruován 95\% interval spoelhlivosti.
+Pro všechny kvantily je konstruován 95\% interval spolehlivosti.
 
 Výsledné grafy jsou uspořádány do matice $3\times 3$:
 \begin{itemize}
-    \item \textbf{Řádky:} Horní řada odpovídá kvantilu $p=0.50$ (cílové pokrytí 0.5),Prostřední řada odpovídá kvantilu $p=0.95$ (cílové pokrytí 0.95), dolní řada kvantilu $p=0.99$ (cílové pokrytí 0.99).
+    \item \textbf{Řádky:} Horní řada odpovídá kvantilu $p=0.50$ (cílové pokrytí 0.5), prostřední řada odpovídá kvantilu $p=0.95$ (cílové pokrytí 0.95), dolní řada kvantilu $p=0.99$ (cílové pokrytí 0.99).
     \item \textbf{Sloupce:} Parametr asymetrie log-normálního rozdělení $\sigma \in \{0.5, 1.0, 1.5\}$.
 \end{itemize}
 
@@ -13,7 +13,7 @@ Výsledné grafy jsou uspořádány do matice $3\times 3$:
 \begin{figure}[H]
     \centering
     \includegraphics[width=1.0\textwidth]{../simulace/coverage_probability.png}
-    \caption{Pokrytí intevalu spolehlivosti. Metody: Bootstrap (červená), Plug-in (modrá), Oracle (zelená).}
+    \caption{Pokrytí intervalu spolehlivosti. Metody: Bootstrap (červená), Plug-in (modrá), Oracle (zelená).}
     \label{fig:coverage}
 \end{figure}
 
@@ -35,10 +35,17 @@ Výsledky ukazují zřetelný rozdíl v chování metod v závislosti na paramet
     \label{fig:bias}
 \end{figure}
 
-Z grafu je patrné, že se vzrůstajícím $\sigma$ se Plug-in metoda stává silně vychýlenou (záporný bias), což vysvětluje nízké pokrytí intervalů spolehlivosti. Bootstrap vykazuje menší vychýlení.
+Systematické vychýlení odhadu směrodatné chyby úzce souvisí s výsledky pokrytí.
+\begin{enumerate}
+    \item \textbf{Plug-in metoda (modrá)}: Vykazuje silné záporné vychýlení pro extrémní kvantily ve chvostech s vysokou variabilitou ($\sigma=1.5$). Vychýlení dosahuje hodnot okolo -40 \% až -50 \%. Příčinou je vyhlazovací efekt jádrového odhadu hustoty (KDE). Ve chvostech log-normálního rozdělení, kde hustota rychle klesá, jádrový odhad s fixní šířkou okna (Scott's rule) má tendenci vyhlazovat pravděpodobnostní funkci. Tím nadhodnocuje hustotu $f(q_p)$ v bodě kvantilu. Vzhledem k tomu, že $f(q_p)$ vystupuje ve vzorci pro asymptotický rozptyl ve jmenovateli, její nadhodnocení vede k podhodnocení rozptylu (SE).
+
+    \item \textbf{Bootstrap (červená)}: Vykazuje mnohem stabilnější chování. Ačkoliv pro velmi malé vzorky ($n=30$) také trpí mírným záporným vychýlením (cca -10 \% až -20 \%), toto vychýlení s rostoucím $n$ rychle mizí. Na rozdíl od Plug-in metody, která zůstává vychýlená i pro velké vzorky (je asymptoticky nestranná, ale konvergence je pro KDE pomalejší), Bootstrap dokáže lépe zachytit variabilitu výběrového kvantilu bez explicitního odhadu hustoty.
+\end{enumerate}
 
 \section{Konvergence chyby (MSE)}
-Vývoj střední čtvercové chyby (MSE) potvrzuje, že všechny metody jsou asymptoticky konzistentní (chyba klesá s $n$), ale rychlost konvergence se liší v závislosti na parametrech.
+Grafy v log-log měřítku (Obrázek \ref{fig:mse}) ukazují lineární pokles chyby, což odpovídá teoretickému předpokladu, že rozptyl odhadů klesá.
+
+Všechny tři metody vykazují podobnou rychlost konvergence (sklon přímek je téměř totožný), avšak liší se v absolutní výši chyby. Pro kvantil $p=0.99$ a vysokou asymetrii $\sigma=1.5$ vidíme, že Plug-in metoda má nižší MSE než Bootstrap. To je paradoxní výsledek způsobený tím, že MSE je součtem rozptylu a vychýlení. Plug-in metoda systematicky podhodnocuje rozptyl (produkuje velmi malé odhady SE, které jsou u sebe, ale daleko od reálných hodnot). Tím má velmi malý rozptyl odhadu SE, což má větší vliv než velké vychýlení v metrice MSE. Bootstrap má sice menší vychýlení, ale vyšší variabilitu odhadů (kvůli náhodnosti převzorkování), což vede k vyšší MSE. MSE je tedy v tomto případě zkreslující metrikou a je důležité se zaměřit i na výsledky předchozích metrik.
 
 \begin{figure}[H]
     \centering

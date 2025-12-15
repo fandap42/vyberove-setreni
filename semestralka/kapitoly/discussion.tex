@@ -1,20 +1,30 @@
-\chapter{Diskuze}
-Výsledky simulace potvrzují, že odhad rozptylu extrémních kvantilů ($p=0.99$) pomocí asymptotických vzorců je v případě sešikmených dat rizikový.
+**5. Diskuze**
 
-\section{Analýza selhání Plug-in metody}
-Klíčovým zjištěním práce je selhání Plug-in metody (založené na jádrovém odhadu hustoty) v oblastech s nízkou pravděpodobností výskytu. Tento jev lze vysvětlit pomocí tzv. \textbf{Bias-Variance tradeoff} při volbě vyhlazovacího okna (bandwidth) u KDE.
-Standardní metody pro volbu šířky okna (např. Scottovo pravidlo, které jsme použili) jsou optimalizovány pro minimalizaci globální chyby (IMSE) přes celý nosič rozdělení. U asymetrických rozdělení, jako je log-normální, je tato globální volba kompromisem, který vede k "přehlazení" (oversmoothing) v oblasti chvostů.
-Důsledek pro odhad rozptylu kvantilu je fatální:
-\begin{enumerate}
-    \item KDE v chvostu nadhodnocuje hustotu ($E[\hat{f}(x)] > f(x)$), protože "rozmazává" pravděpodobnostní hmotu z centra do chvostů.
-    \item Protože rozptyl kvantilu je nepřímo úměrný čtverci hustoty ($AVar \propto 1/f^2$), nadhodnocení hustoty vede k výraznému \textbf{podhodnocení rozptylu}.
-    \item Výsledkem jsou nerealisticky úzké intervaly spolehlivosti, které nedokáží pokrýt skutečnou hodnotu s požadovanou pravděpodobností.
-\end{enumerate}
-Tento metodický nedostatek je u těžkých chvostů principiální a nelze jej snadno odstranit pouhým zvětšením rozsahu výběru, jak ukazují naše výsledky pro $n=1000$.
+Předložená studie se zaměřila na srovnání metod pro konstrukci intervalů spolehlivosti výběrových kvantilů v kontextu log-normálního rozdělení. Výsledky simulací odhalily zásadní diskrepance mezi teoretickými předpoklady asymptotické normality a chováním odhadů v konečných výběrech, zejména v případě silné asymetrie dat.
 
-\section{Doporučení}
-Pro praxi doporučujeme:
-\begin{itemize}
-    \item Pro běžné kvantily ($p \le 0.95$) lze využít Plug-in metodu, pokud je $n$ dostatečně velké ($n > 100$).
-    \item Pro extrémní kvantily ($p=0.99$) a konstrukci intervalů s vysokou spolehlivostí (99 \%) je nutné použít robustnější metody, jako je Bootstrap, nebo metody založené na Teorii extrémních hodnot (EVT), protože standardní asymptotická aproximace v těchto oblastech selhává.
-\end{itemize}
+5.1. Mechanismus selhání Plug-in metody v extrémních chvostech
+
+Nejvýznamnějším zjištěním práce je dramatické selhání Plug-in metody (založené na analytickém vzorci a jádrovém odhadu hustoty) při odhadu rozptylu 99% kvantilu u silně sešikmeného rozdělení ($\sigma=1.5$). Naše výsledky ukazují, že tato metoda systematicky podhodnocuje skutečný rozptyl, což vede k nedostatečnému pokrytí intervalů spolehlivosti.
+
+Toto selhání není důsledkem neplatnosti samotné Delta metody, nýbrž je artefaktem způsobeným nevhodnou volbou vyhlazovacího parametru (bandwidth, $h$) v jádrovém odhadu hustoty. Použité Scottovo pravidlo (Scott, 1992) minimalizuje globální chybu odhadu (MISE) a je silně závislé na směrodatné odchylce vzorku. U log-normálního rozdělení s těžkými chvosty je výběrová směrodatná odchylka značně inflatována extrémními hodnotami. To vede k volbě příliš velkého $h$ (tzv. oversmoothing).
+
+Důsledkem "přehlazení" je, že jádrový odhad nesprávně přenáší pravděpodobnostní hmotu z oblasti modu (kde je hustota dat vysoká) do oblasti chvostů. Odhadnutá hustota $\hat{f}(q_{0.99})$ je tak systematicky vychýlená směrem nahoru (nadhodnocená) oproti skutečné hustotě $f(q_{0.99})$. Vzhledem k tomu, že asymptotický rozptyl je nepřímo úměrný druhé mocnině hustoty ($AVar \propto 1/f^2$), i mírné nadhodnocení hustoty ve jmenovateli vede k výraznému zmenšení odhadovaného rozptylu (Hall & Sheather, 1988). Výsledné intervaly spolehlivosti jsou pak neadekvátně úzké a nezachycují skutečnou hodnotu parametru s požadovanou pravděpodobností.
+
+5.2. Robustnost Bootstrapu a jeho limity
+
+Metoda Bootstrap se v souladu s teorií (Efron, 1979) ukázala jako výrazně odolnější vůči tvaru rozdělení. Tím, že Bootstrap nevyžaduje explicitní odhad hustoty v bodě (což je tzv. problém odhadu řídkosti, sparsity estimation), obchází úskalí spojená s volbou šířky pásma. U středních a větších rozsahů výběru ($n \ge 100$) poskytuje Bootstrap spolehlivé odhady rozptylu i pro silně sešikmená data.
+
+Nicméně, u nejmenšího zkoumaného rozsahu ($n=30$) a extrémního kvantilu ($p=0.99$) selhává i Bootstrap. V tomto případě narážíme na fundamentální limit informace obsažené v datech. 99% kvantil z 30 pozorování leží v podstatě mimo rozsah dat nebo je určen maximem. Bootstrapové výběry v takovém případě generují diskrétní rozdělení s malým počtem unikátních hodnot, což vede k nestabilním odhadům rozptylu. Pro takto malé vzorky a extrémní kvantily nelze doporučit žádnou z testovaných metod bez výhrad a bylo by nutné přejít k metodám teorie extrémních hodnot (EVT) nebo parametrickým přístupům.
+
+5.3. Doporučení pro aplikaci
+
+Na základě provedené analýzy lze formulovat následující doporučení pro statistickou praxi:
+
+1. **Pro běžné kvantily (medián, kvartily):** Lze bezpečně použít Plug-in metodu se Scottovým pravidlem, která je výpočetně efektivní a poskytuje dostatečnou přesnost.
+    
+2. **Pro extrémní kvantily v nesymetrických datech:** Je nutné se vyvarovat použití standardní Plug-in metody s globální šířkou pásma. Pokud výpočetní výkon není omezením, je metodou první volby **Bootstrap**.
+    
+3. **Korekce Plug-in metody:** Pokud je nutné použít analytický odhad, doporučujeme namísto Scottova pravidla použít metody určené přímo pro odhad kvantilového rozptylu, jako je **Hall-Sheatherovo pravidlo** (Hall & Sheather, 1988), které optimalizuje šířku pásma lokálně pro daný kvantil, nikoliv globálně pro celou hustotu. Alternativou je transformace dat (např. logaritmická) před aplikací KDE, která zmírní problém těžkých chvostů (Silverman, 1986).
+    
+
+Tato studie potvrzuje, že slepá aplikace asymptotických vzorců v kombinaci s "black-box" nastavením softwarových nástrojů (jako je defaultní Scottovo pravidlo) může vést u reálných, nesymetrických dat k závažným chybám v inferenci.
