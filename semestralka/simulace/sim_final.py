@@ -212,6 +212,7 @@ def main():
             ax.set_xlabel('Velikost výběru (n)')
             ax.set_ylabel('Relativní Bias (%)')
             ax.set_title(f'σ = {sigma}, p = {p}')
+            ax.set_ylim(-100, 100)  # Limit to +/- 100% to handle extreme outliers
             if (row == 0 and col == 0):
                 ax.legend(loc='best', fontsize=9)
             ax.grid(True, alpha=0.3)
