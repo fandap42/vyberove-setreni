@@ -7,7 +7,7 @@ Definujme $p$-tý teoretický kvantil $q_p$ jako hodnotu, pro kterou platí:
 \begin{equation}
     F(q_p) = p, \quad \text{kde } p \in (0, 1).
 \end{equation}
-Výběrový kvantil $\hat{q}_p$ je definován pomocí empirické distribuční funkce $\hat{F}_n(x)$ jako:
+Výběrový kvantil $\hat{q}_p$ je definován pomocí empirické distribuční funkce $\hat{F}_n(x)$ jako \parencite{Hyndman1996}:
 \begin{equation}
     \hat{q}_p = \hat{F}_n^{-1}(p) = \inf \{x: \hat{F}_n(x) \ge p\}.
 \end{equation}
@@ -39,5 +39,5 @@ Výsledný asymptotický rozptyl výběrového kvantilu je tedy:
 \begin{equation} \label{eq:avar}
     \text{AVar}(\hat{q}_p) = \frac{p(1-p)}{n [f(q_p)]^2}.
 \end{equation}
-Tento metoda je odvozena v \parencite{VanDerVaart1998}, ukazuje závislost přesnosti odhadu na pravděpodobnostní funkci. Je-li hustota $f(q_p)$ malá (např. v chvostech rozdělení), stává se jmenovatel velmi malým, což vede k velkým odhadům rozptylu.
-Tento výsledek je standardní větou v asymptotické statistice \parencite{VanDerVaart1998}. Ukazuje, že přesnost odhadu kvantilu závisí nepřímo úměrně hodnotě hustoty v daném bodě. V oblastech, kde je hustota nízká (chvosty rozdělení), je rozptyl odhadu kvantilu vysoký.
+Tato metoda je odvozena v \parencite{VanDerVaart1998}, ukazuje závislost přesnosti odhadu na pravděpodobnostní funkci. Je-li hustota $f(q_p)$ malá (např. v chvostech rozdělení), stává se jmenovatel velmi malým, což vede k velkým odhadům rozptylu.
+Tento výsledek představuje standardní tvrzení asymptotické statistiky \parencite{VanDerVaart1998}. Ukazuje, že přesnost odhadu kvantilu závisí nepřímo úměrně hodnotě hustoty v daném bodě. V oblastech, kde je hustota nízká (chvosty rozdělení), je rozptyl odhadu kvantilu vysoký.

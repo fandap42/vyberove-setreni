@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import argparse
 from concurrent.futures import ProcessPoolExecutor, as_completed
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -135,31 +136,44 @@ def run_simulation(n, sigma, p, M, B, mu=0):
     return results
 
 def main():
-    param_combinations = []
-    for sigma in SIGMA_VALUES:
-        for p in QUANTILE_LEVELS:
-            for n in SAMPLE_SIZES:
-                param_combinations.append((n, sigma, p))
+    parser = argparse.ArgumentParser(description='Run variance estimation simulation or plot existing results.')
+    parser.add_argument('--plot-only', action='store_true', help='Skip simulation and plot results from CSV')
+    args = parser.parse_args()
 
-    workers = os.cpu_count()
-    print(f"Starting simulation with {len(param_combinations)} tasks using ProcessPoolExecutor on {workers} cores...")
+    if args.plot_only:
+        if os.path.exists("semestralka/simulace/simulation_results.csv"):
+            print("Loading results from simulation_results.csv...")
+            results_df = pd.read_csv("semestralka/simulace/simulation_results.csv")
+        else:
+            print("Error: simulation_results.csv not found. Cannot plot without results.")
+            return
+    else:
+        param_combinations = []
+        for sigma in SIGMA_VALUES:
+            for p in QUANTILE_LEVELS:
+                for n in SAMPLE_SIZES:
+                    param_combinations.append((n, sigma, p))
 
-    results_list = []
-    with ProcessPoolExecutor(max_workers=workers) as executor:
-        future_to_params = {
-            executor.submit(run_simulation, n, sigma, p, M, B, MU): (n, sigma, p)
-            for n, sigma, p in param_combinations
-        }
-        
-        for future in tqdm(as_completed(future_to_params), total=len(param_combinations), desc="Simulating"):
-            try:
-                result = future.result()
-                results_list.append(result)
-            except Exception as exc:
-                n, sigma, p = future_to_params[future]
-                print(f'Task (n={n}, sigma={sigma}, p={p}) generated an exception: {exc}')
+        workers = os.cpu_count()
+        print(f"Starting simulation with {len(param_combinations)} tasks using ProcessPoolExecutor on {workers} cores...")
 
-    results_df = pd.DataFrame(results_list)
+        results_list = []
+        with ProcessPoolExecutor(max_workers=workers) as executor:
+            future_to_params = {
+                executor.submit(run_simulation, n, sigma, p, M, B, MU): (n, sigma, p)
+                for n, sigma, p in param_combinations
+            }
+            
+            for future in tqdm(as_completed(future_to_params), total=len(param_combinations), desc="Simulating"):
+                try:
+                    result = future.result()
+                    results_list.append(result)
+                except Exception as exc:
+                    n, sigma, p = future_to_params[future]
+                    print(f'Task (n={n}, sigma={sigma}, p={p}) generated an exception: {exc}')
+
+        results_df = pd.DataFrame(results_list)
+        results_df.to_csv('simulation_results.csv', index=False)
 
     # Graf 1: Coverage Probability
     fig, axes = plt.subplots(3, 3, figsize=(15, 15), sharey=True)
@@ -242,7 +256,6 @@ def main():
     plt.tight_layout()
     plt.savefig('mse_loglog.png', dpi=150, bbox_inches='tight')
 
-    results_df.to_csv('simulation_results.csv', index=False)
 
 if __name__ == '__main__':
     main()

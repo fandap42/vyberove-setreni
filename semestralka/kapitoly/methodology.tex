@@ -1,8 +1,8 @@
 \chapter{Metodika simulační studie}
 
 \section{Generování dat}
-Jako podkladová data používáme log-normální rozdělení $LN(\mu, \sigma^2)$ s parametry $\mu=0$ a $\sigma \in {0,5; 1; 1,5}$.
-Generujeme náhodné výběry o rozsahu $n \in \{30, 100, 500, 1000\}$ pro simulaci malých, středních a velkých datových souborů.
+Jako podkladová data používáme log-normální rozdělení $LN(\mu, \sigma^2)$ s parametry $\mu=0$ a $\sigma \in \{0.5, 1, 1.5\}$.
+Generujeme náhodné výběry o rozsahu $n \in \{30, 100, 250, 500, 1000, 1500, 2000\}$ pro simulaci malých, středních a velkých datových souborů.
 
 Pro každý výběr odhadujeme tři kvantily reprezentující různé části rozdělení, medián (50\% kvantil), 95\% kvantil a 99\% kvantil. Počet replikací simulace byl stanoven na $M=1000$.
 
@@ -14,15 +14,15 @@ Tato metoda využívá znalosti skutečného rozdělení, ze kterého data poch�
 $$ \widehat{SE}_{Oracle} = \sqrt{\frac{p(1-p)}{n [f_{LN}(q_p)]^2}} $$
 Tato metoda slouží jako ideální v praxi nedosažitelný benchmark, protože v reálných situacích povětšinou neznáme skutečné rozdělení dat.
 
-\subsection{Praktický delta metoda}
-Tato metoda je aplikovatelná v praxi, kdy neznáme skutečnou hustotu $f$. Místo ní použijeme její odhad $\hat{f}(q_p)$. V naší studii využíváme jádrový odhad hustoty (Kernel Density Estimation - KDE) s Gaussovským jádrem a Scottovým pravidlem pro volbu šířky vyhlazovacího okna (bandwidth).
+\subsection{Praktická delta metoda}
+Tato metoda je aplikovatelná v praxi, kdy neznáme skutečnou hustotu $f$. Místo ní použijeme její odhad $\hat{f}(q_p)$. V naší studii využíváme jádrový odhad hustoty (Kernel Density Estimation - KDE) s Gaussovským jádrem a Scottovým pravidlem pro volbu šířky vyhlazovacího okna (bandwidth) \parencite{Scott2015}.
 $$ \widehat{SE}_{Plugin} = \sqrt{\frac{p(1-p)}{n [\hat{f}_{KDE}(\hat{q}_p)]^2}} $$
 Nevýhodou je, že chyba odhadu hustoty se přenáší do chyby odhadu rozptylu kvantilu.
 
 \subsection{Bootstrap}
 Neparametrický bootstrap je metoda založená na převzorkování. Z původního výběru vytvoříme $R=5000$ bootstrapových výběrů (výběr s vracením), pro každý spočítáme výběrový kvantil $\hat{q}^*_p$ a rozptyl odhadujeme jako výběrový rozptyl těchto bootstrapových kvantilů.
 $$ \widehat{SE}_{Boot} = \sqrt{\frac{1}{R-1} \sum_{r=1}^R (\hat{q}^*_{p,r} - \bar{q}^*_p)^2} $$
-Tato metoda nevyžaduje explicitní odhad hustoty, ale je výpočetně náročnější.
+Tato metoda nevyžaduje explicitní odhad hustoty, ale je výpočetně náročnější \parencite{Horowitz2019}.
 
 \subsection{Konstrukce intervalů spolehlivosti}
 Pro všechny tři metody konstruujeme oboustranné intervaly spolehlivosti na hladině spolehlivosti $95\%$ ($\alpha = 0.05$). Využíváme asymptotické normality výběrového kvantilu (Waldův typ intervalu):
