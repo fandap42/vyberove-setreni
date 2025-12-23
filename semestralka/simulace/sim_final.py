@@ -178,7 +178,7 @@ def main():
     # Graf 1: Coverage Probability
     fig, axes = plt.subplots(3, 3, figsize=(15, 15), sharey=True)
     colors = {'golden': 'green', 'plugin': 'blue', 'bootstrap': 'red'}
-    labels = {'golden': 'Taylor (Oracle)', 'plugin': 'Plug-in (KDE)', 'bootstrap': 'Bootstrap'}
+    labels = {'golden': 'Asymptotická', 'plugin': 'Plug-in (KDE)', 'bootstrap': 'Bootstrap'}
     markers = {'golden': 'o', 'plugin': 's', 'bootstrap': '^'}
 
     for row, p in enumerate(QUANTILE_LEVELS):
@@ -204,7 +204,7 @@ def main():
 
     plt.suptitle('Coverage Probability (95% CI)', fontsize=14, fontweight='bold')
     plt.tight_layout()
-    plt.savefig('coverage_probability.png', dpi=150, bbox_inches='tight')
+    plt.savefig('simulace/coverage_probability.png', dpi=150, bbox_inches='tight')
 
     # Graf 2: Relativní Bias
     fig, axes = plt.subplots(3, 3, figsize=(15, 15))
@@ -230,7 +230,7 @@ def main():
 
     plt.suptitle('Relativní Bias odhadu rozptylu', fontsize=14, fontweight='bold')
     plt.tight_layout()
-    plt.savefig('relative_bias.png', dpi=150, bbox_inches='tight')
+    plt.savefig('simulace/relative_bias.png', dpi=150, bbox_inches='tight')
 
     # Graf 3: MSE Log-Log
     fig, axes = plt.subplots(3, 3, figsize=(15, 15))
@@ -254,7 +254,7 @@ def main():
 
     plt.suptitle('MSE odhadu rozptylu (log-log škála)', fontsize=14, fontweight='bold')
     plt.tight_layout()
-    plt.savefig('mse_loglog.png', dpi=150, bbox_inches='tight')
+    plt.savefig('simulace/mse_loglog.png', dpi=150, bbox_inches='tight')
 
 
 if __name__ == '__main__':

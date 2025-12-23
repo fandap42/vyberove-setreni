@@ -2,12 +2,19 @@
 V této kapitole se zaměříme na odvození asymptotického rozptylu výběrového kvantilu. Toto odvození je bude dále použito jako základ metod pro odhad rozptylu kvantilů ve výběrových šetřeních.
 
 \section{Definice a značení}
-Nechť $X_1, X_2, \dots, X_n$ je náhodný výběr z rozdělení se spojitou distribuční funkcí $F(x)$ a hustotou pravděpodobnosti $f(x)$.
+\section{Definice a značení}
+Nechť $X_1, X_2, \dots, X_n$ je náhodný výběr, tj. posloupnost nezávislých stejně rozdělených (i.i.d.) náhodných veličin, z rozdělení se spojitou distribuční funkcí $F(x)$ a hustotou pravděpodobnosti $f(x)$. Předpokládáme, že $F$ je absolutně spojitá.
+
 Definujme $p$-tý teoretický kvantil $q_p$ jako hodnotu, pro kterou platí:
 \begin{equation}
     F(q_p) = p, \quad \text{kde } p \in (0, 1).
 \end{equation}
-Výběrový kvantil $\hat{q}_p$ je definován pomocí empirické distribuční funkce $\hat{F}_n(x)$ jako \parencite{Hyndman1996}:
+
+Výběrový kvantil $\hat{q}_p$ je definován pomocí empirické distribuční funkce $\hat{F}_n(x)$, která je dána předpisem:
+\begin{equation}
+    \hat{F}_n(x) = \frac{1}{n} \sum_{i=1}^n \mathbb{I}(X_i \le x),
+\end{equation}
+kde $\mathbb{I}(\cdot)$ je indikátorová funkce. Výběrový kvantil je pak definován jako \parencite{Hyndman1996}:
 \begin{equation}
     \hat{q}_p = \hat{F}_n^{-1}(p) = \inf \{x: \hat{F}_n(x) \ge p\}.
 \end{equation}
