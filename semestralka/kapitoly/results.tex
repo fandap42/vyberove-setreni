@@ -13,17 +13,17 @@ Výsledné grafy jsou uspořádány do matice $3\times 3$:
 \begin{figure}[H]
     \centering
     \includegraphics[width=1.0\textwidth]{../simulace/coverage_probability.png}
-    \caption{Pokrytí intervalu spolehlivosti. Metody: Bootstrap (červená), Plug-in (modrá), Oracle (zelená).}
+    \caption{Pokrytí intervalu spolehlivosti. Metody: Bootstrap (červená), Plug-in (modrá), Asymptotická metoda (zelená).}
     \label{fig:coverage}
 \end{figure}
 
 Výsledky ukazují zřetelný rozdíl v chování metod v závislosti na parametrech simulace:
 \begin{enumerate}
-    \item \textbf{Teoretická delta metoda (zelená)}: Tato referenční metoda konzistentně dosahuje nominálního pokrytí ve všech scénářích. To potvrzuje, že samotná asymptotická aproximace (\ref{eq:avar}) je platná, pokud známe skutečnou hodnotu hustoty $f(q_p)$.
-    
-    \item \textbf{Plug-in metoda (modrá)}: V případě "běžných" dat ($\sigma \le 1.0$) poskytuje uspokojivé výsledky srovnatelné s Oracle metodou. V kritickém scénáři ($\sigma=1.5, p=0.99$) však dochází k dramatickému selhání. Pravděpodobnost pokrytí zde klesá hluboko pod cílovou hladinu 0.99 (často i pod 0.50). Graf relativního vychýlení (Obrázek \ref{fig:bias}) odhaluje příčinu: odhad směrodatné chyby je v tomto případě systematicky podhodnocen o více než 40 \%. Jádrový odhad hustoty v řídkém chvostu "přehlazuje" data, nadhodnocuje $f(q_p)$, a tím uměle snižuje odhadovaný rozptyl.
-    
-    \item \textbf{Bootstrap (červená)}: Prokazuje mnohem vyšší robustnost vůči asymetrii. I v případě $\sigma=1.5$ si udržuje vyšší pravděpodobnost pokrytí než Plug-in metoda. U malých výběrů ($n=30$) však ani Bootstrap nedosahuje ideálního pokrytí 0.99. Zde narážíme na limity malého vzorku, kdy v kritické oblasti chvostu prostě "nejsou data" pro spolehlivé převzorkování.
+    \item \textbf{Asymptotická metoda (zelená)}: Tato referenční metoda konzistentně dosahuje nominálního pokrytí ve všech scénářích. To potvrzuje, že samotná asymptotická aproximace (\ref{eq:avar}) je platná, pokud známe skutečnou hodnotu hustoty $f(q_p)$.
+
+    \item \textbf{Plug-in metoda (modrá)}: V případě \uv{běžných} dat ($\sigma \le 1.0$) poskytuje uspokojivé výsledky srovnatelné s asymptotickou metodou. V kritickém scénáři ($\sigma=1.5, p=0.99$) však dochází k dramatickému selhání. Pravděpodobnost pokrytí zde klesá hluboko pod cílovou hladinu 0.99 (často i pod 0.50). Graf relativního vychýlení (Obrázek \ref{fig:bias}) odhaluje příčinu: odhad směrodatné chyby je v tomto případě systematicky podhodnocen o více než 40 \%. Jádrový odhad hustoty v řídkém chvostu \uv{přehlazuje} data, nadhodnocuje $f(q_p)$, a tím uměle snižuje odhadovaný rozptyl.
+
+    \item \textbf{Bootstrap (červená)}: Prokazuje mnohem vyšší robustnost vůči asymetrii. I v případě $\sigma=1.5$ si udržuje vyšší pravděpodobnost pokrytí než Plug-in metoda. U malých výběrů ($n=30$) však ani Bootstrap nedosahuje ideálního pokrytí 0.99. Zde narážíme na limity malého vzorku, kdy v kritické oblasti chvostu není dostatečně dat pro spolehlivé převzorkování.
 \end{enumerate}
 
 \section{Systematické vychýlení (Relative Bias)}
